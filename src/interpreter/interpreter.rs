@@ -16,32 +16,49 @@ const R15_f: u16 = 0b10000000000;
 
 pub struct State {
     pc: Register,
-    r: [Register],
+    r: [Register;15],
     halt: Register,
 
     memory: Memory
 }
 
-pub fn step() {
-
+impl State {
+    pub fn new(memory: &[u16]) -> State {
+        State{
+            pc:(Register::new()),
+            r: [Register::new(); 15],
+            halt: (Register::new()),
+            memory: (Memory::new(Option::from(memory))),
+        }
+    }
 }
 
-pub fn init() {
+pub fn init(memory: &[u16]) -> State{
+    let mut state: State = State::new(memory);
 
+    state.pc.set(0);
+
+    return state;
 }
 
-fn arith_set_r15(state: &mut State, result: u32) {
+pub fn step(state: &mut State) {
+    let opcode = next_op(&state.memory, &mut state.pc);
+    execute(opcode.unwrap(), state);
+}
+
+// Set R15 bits for the result of arithmetic operations
+fn arith_set_r15(state: &mut State, result: u32, binary: bool, tc: bool) {
     let mut r15: u16 = 0;
 
-    if (result > 0) { r15 = r15 | R15_G}                        // result > 0 (binary)
-    if (result < 0) { r15 = r15 | R15_V}                        // result < 0 (binary)
-    if (((result as u16) & TC_MASK) > 0) { r15 = r15 | R15_g}   // result > 0 (twos complement)
-    if (((result as u16) & TC_MASK) < 0) { r15 = r15 | R15_lt } // result < 0 (twos complement)
-    if (result == 0) { r15 = r15 | R15_eq}                      // result == 0
+    if (result > 0 && binary) { r15 = r15 | R15_G}                      // result > 0 (binary)
+    if (result < 0 && binary) { r15 = r15 | R15_V}                      // result < 0 (binary)
+    if (((result as u16) & TC_MASK) > 0 && tc) { r15 = r15 | R15_g}     // result > 0 (twos complement)
+    if (((result as u16) & TC_MASK) < 0 && tc) { r15 = r15 | R15_lt }   // result < 0 (twos complement)
+    if (result == 0) { r15 = r15 | R15_eq}                              // result == 0
     if (((result >> 16) as u16) > 0 ) {
-        r15 = r15 | R15_V;                                      // overflow (binary)
-        r15 = r15 | R15_v;                                      // overflow (twos complement)
-        r15 = r15 | R15_C;                                      // carry bit set
+        if (binary) { r15 = r15 | R15_V; }                              // overflow (binary)
+        if (tc) { r15 = r15 | R15_v; }                                  // overflow (twos complement)
+        r15 = r15 | R15_C;                                              // carry bit set
     }
 
     state.r[15].set(r15);
@@ -49,20 +66,18 @@ fn arith_set_r15(state: &mut State, result: u32) {
 
 fn execute(opcode: OpCodes, state: &mut State) {
     match opcode {
-
-        // Normal addition
+        // ================
+        // RRR Instructions
+        // ================
         OpCodes::Add(..) => {
             println!("Executing add, PC: {}", state.pc.get());
             let mut temp: u32 = state.r[opcode[1]] + state.r[opcode[0]];
-            let mut r15: u16 = 0;
 
             state.r[opcode[2]] = temp as u16;
 
             // Set R15 bits
-            arith_set_r15(state, temp);
+            arith_set_r15(state, temp, true, true);
         },
-
-        // Add with carry
         OpCodes::Addc(..) => {
             println!("Executing addc, PC: {}", state.pc.get());
             // Is carry bit set?
@@ -73,24 +88,25 @@ fn execute(opcode: OpCodes, state: &mut State) {
 
             state.r[opcode[2]] = temp as u16;
 
-            // If overflow, record it in R15
-            if (((temp >> 16) as u16) > 0 ) { state.r[15].set(0b11100010) }
+            // Set R15 bits
+            arith_set_r15(state, temp, true, true);
 
         },
-
-        // Normal Subtraction
         OpCodes::Sub(..) => {
             println!("Executing sub, PC: {}", state.pc.get());
             state.r[opcode[2]] = state.r[opcode[1]] - state.r[opcode[0]];
-            arith_set_r15(state, state.r[opcode[2]]);
+            arith_set_r15(state, state.r[opcode[2]], true, true);
         },
         OpCodes::Mul(..) => {
             println!("Executing mul, PC: {}", state.pc.get());
             state.r[opcode[2]] = state.r[opcode[1]] * state.r[opcode[0]];
-            arith_set_r15(state, state.r[opcode[2]]);
+            arith_set_r15(state, state.r[opcode[2]], false, true);
         },
         OpCodes::Muln(..) => {
             println!("Executing muln, PC: {}", state.pc.get());
+            let temp: u32 = state.r[opcode[1]] * state.r[opcode[0]];
+            state.r[opcode[2]].set(temp as u16);
+            state.r[15].set((temp >> 16) as u16);
         },
         OpCodes::Div(..) => {
             println!("Executing div, PC: {}", state.pc.get());
@@ -99,6 +115,20 @@ fn execute(opcode: OpCodes, state: &mut State) {
         },
         OpCodes::Divn(..) => {
             println!("Executing divn, PC: {}", state.pc.get());
+            let dividend_mask: u32 = 0xffff0000;
+
+            // The left most 16 bits of dividend is contents of R15
+            // The right most 16 bits is Ra
+            let mut dividend: u32 = (state.r[15].get() as u32) << 16;
+            // left most 16 bits is R15, bitwise or with 0xffff[Ra] where Ra is 2 bytes
+            dividend = dividend | ((state.r[opcode[1]] as u32) | dividend_mask);
+
+            let quotient: u32 = dividend / (state.r[opcode[0]] as u32);
+            let remainder: u16 = (dividend % state.r[opcode[0]]) as u16;
+
+            state.r[15].set((quotient >> 16) as u16);
+            state.r[opcode[2]].set(quotient as u16);
+            state.r[opcode[1]].set(remainder);
         },
         OpCodes::Cmp(..) => {
             println!("Executing cmp, PC: {}", state.pc.get());
@@ -131,7 +161,9 @@ fn execute(opcode: OpCodes, state: &mut State) {
         OpCodes::Trap(..) => {
             println!("Executing trap, PC: {}", state.pc.get());
         },
-
+        // ================
+        // iRX Instructions
+        // ================
     }
 
 
