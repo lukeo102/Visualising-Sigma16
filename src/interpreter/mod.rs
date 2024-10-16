@@ -1,4 +1,5 @@
 pub mod interpreter;
 mod opcodes;
 mod register;
-mod memory;
+pub mod memory;
+pub(crate) mod state;
