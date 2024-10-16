@@ -36,13 +36,15 @@ pub enum OpCodes {
 }
 
 // Pass in slice of current + max possible following.
-pub fn next_op(memory: &Memory, pc: &mut Register) -> Result<OpCodes, Box<dyn Error>> {
+pub fn next_op(memory: &Memory, pc: &mut Register, verbose: bool) -> Result<OpCodes, Box<dyn Error>> {
     let word: u16 = memory[pc.poinc(1).into()];
+    
+    if verbose { print!("Instruction: {:#06x}", word) }
 
     // Extract individual nibbles from the word
     let nibbles = word_to_nibbles(word);
 
-    match nibbles[3] {
+    let opcode = match nibbles[3] {
         // iRRR instructions
         0 => Ok(OpCodes::Add(nibbles[2], nibbles[1], nibbles[0])),
         1 => Ok(OpCodes::Sub(nibbles[2], nibbles[1], nibbles[0])),
@@ -59,22 +61,28 @@ pub fn next_op(memory: &Memory, pc: &mut Register) -> Result<OpCodes, Box<dyn Er
         12 => Ok(OpCodes::Trap(nibbles[2], nibbles[1], nibbles[0])),
 
         // iRX instructions
-        15 => match nibbles[0] {
-            0 => Ok(OpCodes::Lea(nibbles[2], nibbles[1], memory[pc.poinc(1).into()])),
-            1 => Ok(OpCodes::Load(nibbles[2], nibbles[1], memory[pc.poinc(1).into()])),
-            2 => Ok(OpCodes::Store(nibbles[2], nibbles[1], memory[pc.poinc(1).into()])),
-            3 => Ok(OpCodes::Jump(nibbles[2], nibbles[1], memory[pc.poinc(1).into()])),
-            4 => Ok(OpCodes::Jumpc0(nibbles[2], nibbles[1], memory[pc.poinc(1).into()])),
-            5 => Ok(OpCodes::Jumpc1(nibbles[2], nibbles[1], memory[pc.poinc(1).into()])),
-            6 => Ok(OpCodes::Jal(nibbles[2], nibbles[1], memory[pc.poinc(1).into()])),
-            7 => Ok(OpCodes::Jumpz(nibbles[2], nibbles[1], memory[pc.poinc(1).into()])),
-            8 => Ok(OpCodes::Jumpnz(nibbles[2], nibbles[1], memory[pc.poinc(1).into()])),
-            11 => Ok(OpCodes::Testset(nibbles[2], nibbles[1], memory[pc.poinc(1).into()])),
-            _ => panic!("Invalid op code"),
+        15 => {
+            let word2 = memory[pc.poinc(1) as usize];
+            if verbose {print!(" {:#06x}", word2)}
+            match nibbles[0] {
+                0 => Ok(OpCodes::Lea(nibbles[2], nibbles[1], word2)),
+                1 => Ok(OpCodes::Load(nibbles[2], nibbles[1], word2)),
+                2 => Ok(OpCodes::Store(nibbles[2], nibbles[1], word2)),
+                3 => Ok(OpCodes::Jump(nibbles[2], nibbles[1], word2)),
+                4 => Ok(OpCodes::Jumpc0(nibbles[2], nibbles[1], word2)),
+                5 => Ok(OpCodes::Jumpc1(nibbles[2], nibbles[1], word2)),
+                6 => Ok(OpCodes::Jal(nibbles[2], nibbles[1], word2)),
+                7 => Ok(OpCodes::Jumpz(nibbles[2], nibbles[1], word2)),
+                8 => Ok(OpCodes::Jumpnz(nibbles[2], nibbles[1], word2)),
+                11 => Ok(OpCodes::Testset(nibbles[2], nibbles[1], word2)),
+                _ => panic!("Invalid op code"),
+            }
         }
 
         // iEXP instructions
 
         _ => panic!("Invalid op code"),
-    }
+    };
+    if verbose { print!("\n"); }
+    opcode
 }

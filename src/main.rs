@@ -1,11 +1,11 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 use crate::interpreter::{interpreter::run, state::State, memory::Memory};
 use crate::interpreter::state::RunningState;
-use crate::assembler::assembler::{assemble, read_from_file};
+// use crate::assembler::assembler::{assemble, read_from_file};
 
 
 mod interpreter;
-mod assembler;
+// mod assembler;
 
 fn main() {
     let mem = [
@@ -20,12 +20,12 @@ fn main() {
         0x0101_u16,
     ];
     
-    read_from_file("assemble");
+    // read_from_file("assemble");
     
-    // let mut state = State::new(&mem);
-    // state.verbose = true;
-    // state.state = RunningState::Ready;
-    // run(&mut state);
+    let mut state = State::new(&mem);
+    state.verbose = true;
+    state.state = RunningState::Ready;
+    run(&mut state);
 
 }
 // 

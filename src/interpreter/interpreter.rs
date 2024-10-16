@@ -40,7 +40,7 @@ pub fn run(state: &mut State) {
 }
 
 fn step(state: &mut State) {
-    let opcode = next_op(&state.memory, &mut state.pc);
+    let opcode = next_op(&state.memory, &mut state.pc, state.verbose);
     execute(opcode.unwrap(), state);
 }
 
