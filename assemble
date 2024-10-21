@@ -1,4 +1,6 @@
      lea    R1,6[R0]      ; R1 := 6
      lea    R2,10[R0]      ; R1 := 6
+     add    R4,R1,R2
      mul    R3,R1,R2      ; R3 := 6 * x = 42 (hex 002a)
      trap   R0,R0,R0      ; halt
+result data 0

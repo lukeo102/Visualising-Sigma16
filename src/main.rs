@@ -20,8 +20,9 @@ fn main() {
         0x0001_u16,
         0x0101_u16,
     ];
+
+    println!("{:?}", parse_code(&*read_from_file("assemble")));
     
-    parse_code(&*read_from_file("assemble"))
     // let memory: &[u16] = &*assemble(read_from_file("assemble"));
     // memory.iter().for_each(|x| println!("{:#06x}", x));
     // let mut state = State::new(&mem);
