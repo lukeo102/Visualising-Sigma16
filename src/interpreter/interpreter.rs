@@ -1,5 +1,5 @@
 use std::cmp::PartialEq;
-use crate::interpreter::{opcodes::{OpCodes, next_op}, register::Register, memory::Memory, state::{State, RunningState}, state};
+use crate::interpreter::{opcodes::{OpCodes, next_op}, register::Register, memory::Memory, state::{State, RunningState}};
 
 const TC_MASK: u16 = 0b1000_0000_0000_0000;
 const R15_g: u16 = 0b1;
@@ -40,7 +40,7 @@ pub fn run(state: &mut State) {
 }
 
 fn step(state: &mut State) {
-    let opcode = next_op(&state.memory, &mut state.pc);
+    let opcode = next_op(&state.memory, &mut state.pc, state.verbose);
     execute(opcode.unwrap(), state);
 }
 

@@ -35,7 +35,7 @@ pub fn read_from_file(file: &str) -> String {
     fs::read_to_string(file).expect("File Read")
 }
 
-// 
+//
 // #[wasm_bindgen]
 // pub fn assemble_from_file(file: web_sys::) {
 //     let mut memory: Vec<u16> = Vec::new();
