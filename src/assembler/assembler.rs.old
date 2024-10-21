@@ -1,0 +1,148 @@
+use std::collections::HashMap;
+use std::fs;
+use regex::Regex;
+use crate::assembler::instructions::{InstructionType, IRXInstruction, RRRInstruction};
+use crate::interpreter::memory::U16_MAX;
+
+struct RegexExtraction {
+    pub rrr_args: Regex, 
+    pub irx_args: Regex,
+    pub command: Regex,
+}
+
+impl RegexExtraction {
+    pub fn new() -> Self {
+        RegexExtraction {
+            // Match registers Rd, Ra, Rb
+            rrr_args: Regex::new(r"[Rr](?P<rd>[0-9][0-9]?),[Rr](?P<ra>[0-9][0-9]?),[Rr](?P<rb>[0-9][0-9]?)").unwrap(),
+            irx_args: Regex::new(r"[Rr](?P<ra>[0-9][0-9]?),(?P<addr>(?:[1-9][0-9]?)?(?:[a-zA-Z][a-zA-Z0-9]*)?(?:\$[0-9a-f]{1,4})?)\[[Rr](?P<disp>[0-9][0-9]?)]").unwrap(),
+            command: Regex::new(r"(?P<cmd>.+)").unwrap(),
+        }
+    }
+}
+
+
+pub fn read_from_file(file: &str) -> String {
+    fs::read_to_string(file).expect("File Read")
+}
+
+pub fn parse_code(code: String) -> String {
+    let mut temp = code;
+
+    // Remove leading whitespace
+    temp = Regex::new(r"^ +").unwrap().replace_all(&temp, "").parse().unwrap();
+    temp = Regex::new(r"[\n\r] +").unwrap().replace_all(&temp, "\n").parse().unwrap();
+
+    // Replace duplicate whitespace with single space
+    temp = Regex::new(r" +").unwrap().replace_all(&temp, " ").parse().unwrap();
+
+    // Remove comments
+    temp = Regex::new(r" ?;.+\n").unwrap().replace_all(&temp, "\n").parse().unwrap();
+    
+    println!("{}", temp);
+    temp
+}
+
+fn register_to_int(reg: &str) -> u16 {
+    // Setup regex
+    Regex::new(r"r")
+        .unwrap()
+        // Remove "r" from "rx"
+        .replace_all(reg.to_lowercase().as_str(), "")
+        .to_string()
+        // Parse x to int
+        .parse::<u16>()
+        .unwrap()
+}
+
+pub fn assemble(code: String) -> Box<[u16]> {
+    let mut assembled = Vec::<u16>::with_capacity(U16_MAX as usize);
+    let mut cursor: usize = 0;
+    let mut addresses: HashMap<String, Vec<usize>> = HashMap::new();
+    let regex = RegexExtraction::new();
+    
+    parse_code(code)
+        .split("\n")
+        .for_each(|line| {
+                let mut command = line.split(" ");
+                let error = match command.next() {
+                    // If blank space, skip line
+                    None => { Err("Empty String") },
+                    Some(instruction_string) => { Ok(instruction_string) },
+                }.map(|instruction_string| {
+                    println!("reached: {}", InstructionType::from_string(instruction_string).to_string());
+                    InstructionType::from_string(instruction_string)
+                }).map(|instruction_type| {
+                    let mut instruction = 0_u16;
+                    match instruction_type {
+                        InstructionType::RRR(rrr_instruction) => {
+                            instruction = rrr_instruction.to_int() << 12;
+                            let mut registers =  regex.rrr_args.find_iter(line);
+                            for i in (-1..=2).rev() {
+                                let register = registers.next().unwrap().as_str();
+                                println!("{}", register);
+                                instruction |= register.parse::<u16>().unwrap() << (4 * i);
+                            }
+                            println!("inst: {:#x}", instruction);
+                            assembled.push(instruction);
+                            cursor += 1;
+                        }
+                        InstructionType::IRX(irx_instruction) => {
+                            // Signify its an iRX instruction
+                            instruction = 15 << 12;
+                            // Add the actual instruction
+                            instruction |= irx_instruction.to_int();
+                            
+                            // Get arguments
+                            let mut args = command.next().unwrap().split(",").collect::<Vec<&str>>();
+                            instruction |= register_to_int(args[0]) << 8;
+                            println!("{:#x}", instruction);
+                            
+                            // Isolate Rx
+                            let mut rx = args[1].to_string();
+                            rx = Regex::new(r"[a-zA-Z0-9]+\[").unwrap().replace_all(&rx, "").parse().unwrap();
+                            rx = Regex::new(r"]").unwrap().replace_all(&rx, "").parse().unwrap();
+                            
+                            // Add Rx
+                            instruction |= register_to_int(rx.as_str()) << 4;
+                            assembled.push(instruction);
+                            
+                            // Add the address or constant
+                            cursor += 1;
+                            let mut addr = Regex::new(r"\[[Rr][0-9]+]").unwrap().replace_all(args[1], "").parse::<String>().unwrap();
+                            match irx_instruction {
+                                // Constant
+                                IRXInstruction::Lea => {
+                                    instruction = Regex::new(r"\[[Rr][0-9]+]").unwrap().replace_all(&addr, "").parse::<u16>().unwrap();
+                                },
+                                // Address
+                                _ => {
+                                    instruction = 0_u16;
+                                    addr = Regex::new(r"\[[Rr][0-9]+]").unwrap().replace_all(&addr, "").parse::<String>().unwrap();
+                                    match addresses.get(&addr) {
+                                        None => {
+                                            addresses.insert(addr, vec![cursor]);
+                                        },
+                                        Some(_) => {
+                                            addresses.get_mut(&addr).unwrap().push(cursor);
+                                        },
+                                    }
+                                }
+                            }
+                            assembled.push(instruction);
+                            cursor += 1;          
+                        }
+                        InstructionType::Unknown => {
+                            // todo!("implement variables")
+                            println!("Unknown Instruction");
+                        }
+                    }
+                });
+            }
+        );
+
+    
+    
+    assembled.shrink_to_fit();
+    assembled.try_into().unwrap()
+}

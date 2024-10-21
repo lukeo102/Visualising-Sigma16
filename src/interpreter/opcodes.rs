@@ -35,6 +35,7 @@ pub enum OpCodes {
 
 }
 
+
 // Pass in slice of current + max possible following.
 pub fn next_op(memory: &Memory, pc: &mut Register) -> Result<OpCodes, Box<dyn Error>> {
     let word: u16 = memory[pc.poinc(1).into()];
