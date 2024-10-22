@@ -1,5 +1,8 @@
-use std::cmp::PartialEq;
-use crate::interpreter::{opcodes::{OpCodes, next_op}, register::Register, memory::Memory, state::{State, RunningState}};
+#![allow(non_upper_case_globals)]
+use crate::interpreter::{
+    opcodes::{next_op, OpCodes},
+    state::{RunningState, State},
+};
 
 const TC_MASK: u16 = 0b1000_0000_0000_0000;
 const R15_g: u16 = 0b1;
@@ -14,28 +17,30 @@ const R15_S: u16 = 0b1_0000_0000;
 const R15_s: u16 = 0b10_0000_0000;
 const R15_f: u16 = 0b100_0000_0000;
 
-pub fn init(memory: &[u16]) -> State{
+pub fn init(memory: &[u16]) -> State {
     let mut state: State = State::new(memory);
 
     state.pc.set(0);
 
-    return state;
+    state
 }
 
 pub fn run(state: &mut State) {
     let mut running = true;
-    if (state.verbose) { state.print_verbose() }
-    while (running) {
+    if state.verbose {
+        state.print_verbose();
+    }
+    while running {
         match state.state {
-            RunningState::Ready => { state.state = RunningState::Running },
-            RunningState::Running => { step(state) },
-            RunningState::Step => {
-                step(state)
-            },
-            RunningState::Haulted => { running = false },
+            RunningState::Ready => state.state = RunningState::Running,
+            RunningState::Running => step(state),
+            RunningState::Step => step(state),
+            RunningState::Haulted => running = false,
             _ => {}
         }
-        if (state.verbose) { state.print_verbose() }
+        if state.verbose {
+            state.print_verbose();
+        }
     }
 }
 
@@ -44,108 +49,188 @@ fn step(state: &mut State) {
     execute(opcode.unwrap(), state);
 }
 
-
 fn execute(opcode: OpCodes, state: &mut State) {
     match opcode {
         // ================
         // RRR Instructions
         // ================
         OpCodes::Add(..) => {
-            if state.verbose { println!("Executing add") }
+            if state.verbose {
+                println!("Executing add");
+            }
             if let OpCodes::Add(rd, ra, rb) = opcode {
                 let result: u32 = state.r[ra as usize] + state.r[rb as usize];
                 state.r[rd as usize].set(result as u16);
 
                 // Set R15 bits
                 let mut r15 = 0_u16;
-                if result as u16 & TC_MASK == 0 { r15 = r15 | R15_g }
-                if result > 0 { r15 = r15 | R15_G }
-                if result as u16 == 0 { r15 = r15 | R15_eq}
-                if result as u16 & TC_MASK > 0 { r15 = r15 | R15_lt} // if negative number
-                if result & 0xffff0000 > 0 { r15 = r15 | R15_V | R15_C}
+                if result as u16 & TC_MASK == 0 {
+                    r15 |= R15_g;
+                }
+                if result > 0 {
+                    r15 |= R15_G;
+                }
+                if result as u16 == 0 {
+                    r15 |= R15_eq;
+                }
+                if result as u16 & TC_MASK > 0 {
+                    r15 |= R15_lt;
+                } // if negative number
+                if result & 0xffff_0000 > 0 {
+                    r15 = r15 | R15_V | R15_C;
+                }
                 state.r[15].set(r15);
             }
-        },
+        }
         OpCodes::Addc(..) => {
-            if state.verbose { println!("Executing addc") }
+            if state.verbose {
+                println!("Executing addc");
+            }
             if let OpCodes::Addc(rd, ra, rb) = opcode {
                 // Is carry bit set?
                 let carry_set: bool = (state.r[15].get() & R15_C) > 0;
                 let mut result: u32 = state.r[ra as usize] + state.r[rb as usize];
 
-                if (carry_set) { result = result + 1; }
+                if carry_set {
+                    result += 1;
+                }
 
                 state.r[rd as usize].set(result as u16);
-                if state.verbose { println!("  {} + {} = {} Into R{}", state.r[ra as usize].get(), state.r[rb as usize].get(), result, rd) }
+                if state.verbose {
+                    println!(
+                        "  {} + {} = {} Into R{}",
+                        state.r[ra as usize].get(),
+                        state.r[rb as usize].get(),
+                        result,
+                        rd
+                    );
+                }
 
                 // Set R15 bits
                 let mut r15 = 0_u16;
-                if result as u16 & TC_MASK == 0 { r15 = r15 | R15_g }
-                if result > 0 { r15 = r15 | R15_G }
-                if result as u16 == 0 { r15 = r15 | R15_eq}
-                if result as u16 & TC_MASK > 0 { r15 = r15 | R15_lt} // if negative number
-                if result & 0xffff0000 > 0 { r15 = r15 | R15_V | R15_C}
+                if result as u16 & TC_MASK == 0 {
+                    r15 |= R15_g;
+                }
+                if result > 0 {
+                    r15 |= R15_G;
+                }
+                if result as u16 == 0 {
+                    r15 |= R15_eq;
+                }
+                if result as u16 & TC_MASK > 0 {
+                    r15 |= R15_lt;
+                } // if negative number
+                if result & 0xffff_0000 > 0 {
+                    r15 = r15 | R15_V | R15_C;
+                }
                 state.r[15].set(r15);
             }
-        },
+        }
         OpCodes::Sub(..) => {
-            if state.verbose { println!("Executing sub") }
+            if state.verbose {
+                println!("Executing sub");
+            }
             if let OpCodes::Sub(rd, ra, rb) = opcode {
                 // let mut rd_temp = state.r[rd as usize];
                 let result = state.r[ra as usize] - state.r[rb as usize];
                 state.r[rd as usize].set(result as u16);
-                if state.verbose { println!("  {} - {} = {} Into R{}", state.r[ra as usize].get(), state.r[rb as usize].get(), result, rd) }
+                if state.verbose {
+                    println!(
+                        "  {} - {} = {} Into R{}",
+                        state.r[ra as usize].get(),
+                        state.r[rb as usize].get(),
+                        result,
+                        rd
+                    );
+                }
 
                 // Set R15 bits
                 let mut r15 = 0_u16;
-                if result as u16 & TC_MASK == 0 { r15 = r15 | R15_g }
-                if result > 0 { r15 = r15 | R15_G }
-                if result as u16 == 0 { r15 = r15 | R15_eq }
-                if result as u16 & TC_MASK > 0 { r15 = r15 | R15_lt} // if negative number
-                if result & 0xffff0000 > 0 { r15 = r15 | R15_V | R15_C}
+                if result as u16 & TC_MASK == 0 {
+                    r15 |= R15_g;
+                }
+                if result > 0 {
+                    r15 |= R15_G;
+                }
+                if result as u16 == 0 {
+                    r15 |= R15_eq;
+                }
+                if result as u16 & TC_MASK > 0 {
+                    r15 |= R15_lt;
+                } // if negative number
+                if result & 0xffff_0000 > 0 {
+                    r15 = r15 | R15_V | R15_C;
+                }
                 state.r[15].set(r15);
             }
-        },
+        }
         OpCodes::Mul(..) => {
-            if state.verbose { println!("Executing mul") }
+            if state.verbose {
+                println!("Executing mul");
+            }
             if let OpCodes::Mul(rd, ra, rb) = opcode {
-                let result = state.r[ra as usize] * state.r[rd as usize];
+                let result = state.r[ra as usize] * state.r[rb as usize];
+                if state.verbose {
+                    println!(
+                        "  {} * {} = {} Into R{}",
+                        state.r[ra as usize].get(),
+                        state.r[rb as usize].get(),
+                        result,
+                        rd
+                    );
+                }
 
                 state.r[rb as usize].set(result as u16);
-                if state.verbose { println!("  {} * {} = {} Into R{}", state.r[ra as usize].get(), state.r[rb as usize].get(), result, rd) }
 
                 // Set R15 bits
                 let mut r15 = 0_u16;
-                if result & 0xffff0000 > 0 { r15 = r15 | R15_v}
+                if result & 0xffff_0000 > 0 {
+                    r15 |= R15_v;
+                }
                 state.r[15].set(r15);
             }
-        },
+        }
         OpCodes::Muln(..) => {
-            if state.verbose { println!("Executing muln") }
+            if state.verbose {
+                println!("Executing muln");
+            }
             if let OpCodes::Muln(rd, ra, rb) = opcode {
                 let temp: u32 = state.r[ra as usize] * state.r[rd as usize];
                 state.r[rb as usize].set(temp as u16);
                 state.r[15].set((temp >> 16) as u16);
             }
-        },
+        }
         OpCodes::Div(..) => {
-            if state.verbose { println!("Executing div") }
+            if state.verbose {
+                println!("Executing div");
+            }
             if let OpCodes::Div(rd, ra, rb) = opcode {
                 state.r[rb as usize].set(state.r[ra as usize] / state.r[rd as usize]);
                 state.r[15].set(state.r[ra as usize] % state.r[rd as usize]);
-                if state.verbose { println!("  {} / {} = {} Into R{}, Remainder {}", state.r[ra as usize].get(), state.r[rb as usize].get(), state.r[rb as usize].get(), rd, state.r[15].get()) }
+                if state.verbose {
+                    println!(
+                        "  {} / {} = {} Into R{}, Remainder {}",
+                        state.r[ra as usize].get(),
+                        state.r[rb as usize].get(),
+                        state.r[rb as usize].get(),
+                        rd,
+                        state.r[15].get()
+                    );
+                }
             }
-        },
+        }
         OpCodes::Divn(..) => {
-            if state.verbose { println!("Executing divn") }
+            if state.verbose {
+                println!("Executing divn");
+            }
             if let OpCodes::Divn(rd, ra, rb) = opcode {
-                let dividend_mask: u32 = 0xffff0000;
+                let dividend_mask: u32 = 0xffff_0000;
 
                 // The left most 16 bits of dividend is contents of R15
                 // The right most 16 bits is Ra
-                let mut dividend: u32 = (state.r[15].get() as u32) << 16;
+                let mut dividend: u32 = u32::from(state.r[15].get()) << 16;
                 // left most 16 bits is R15, bitwise or with 0xffff[Ra] where Ra is 2 bytes
-                dividend = dividend | (u32::from(state.r[ra as usize]) | dividend_mask);
+                dividend |= u32::from(state.r[ra as usize]) | dividend_mask;
 
                 let quotient: u32 = dividend / u32::from(state.r[rd as usize]);
                 let remainder: u16 = (dividend % u32::from(state.r[rd as usize])) as u16;
@@ -154,111 +239,168 @@ fn execute(opcode: OpCodes, state: &mut State) {
                 state.r[rb as usize].set(quotient as u16);
                 state.r[ra as usize].set(remainder);
             }
-        },
+        }
         OpCodes::Cmp(..) => {
-            if state.verbose { println!("Executing cmp") }
+            if state.verbose {
+                println!("Executing cmp");
+            }
             if let OpCodes::Cmp(rd, ra, rb) = opcode {
                 let mut r15: u16 = 0;
 
-                if (state.r[ra as usize].get() == state.r[rd as usize].get()) {
-                    r15 = r15 | 0b100;                                                      // Ra == Rb
+                if state.r[ra as usize].get() == state.r[rd as usize].get() {
+                    r15 |= 0b100; // Ra == Rb
                     state.r[15].set(r15);
                 } else {
-                    if (state.r[ra as usize].get() > state.r[rd as usize].get()) { r15 = r15 | 0b10 }       // Ra > Rb (binary)
-                    else { r15 = r15 | 0b10000 }                                            // Ra < Rb (binary)
-                    if ((state.r[ra as usize].get() & TC_MASK) > 0 || (state.r[rd as usize].get() & TC_MASK) > 0) {
-                        if { state.r[ra as usize].get() > state.r[rd as usize].get() } { r15 = r15 | 0b1000 }   // Ra < Rb (twos complement)
-                        else { r15 = r15 | 0b1 }                                            // Ra > Rb (twos complement)
+                    if state.r[ra as usize].get() > state.r[rd as usize].get() {
+                        r15 |= 0b10;
+                    }
+                    // Ra > Rb (binary)
+                    else {
+                        r15 |= 0b10000;
+                    } // Ra < Rb (binary)
+                    if (state.r[ra as usize].get() & TC_MASK) > 0
+                        || (state.r[rd as usize].get() & TC_MASK) > 0
+                    {
+                        if state.r[ra as usize].get() > state.r[rd as usize].get() {
+                            r15 |= 0b1000;
+                        }
+                        // Ra < Rb (twos complement)
+                        else {
+                            r15 |= 0b1;
+                        } // Ra > Rb (twos complement)
                     }
                 }
 
                 state.r[15].set(r15);
             }
-        },
+        }
         OpCodes::Rrr1(..) => {
-            if state.verbose { println!("Executing rrr1") }
-        },
+            if state.verbose {
+                println!("Executing rrr1");
+            }
+        }
         OpCodes::Rrr2(..) => {
-            if state.verbose { println!("Executing rrr2") }
-        },
+            if state.verbose {
+                println!("Executing rrr2");
+            }
+        }
         OpCodes::Rrr3(..) => {
-            if state.verbose { println!("Executing rrr3") }
-        },
+            if state.verbose {
+                println!("Executing rrr3");
+            }
+        }
         OpCodes::Rrr4(..) => {
-            if state.verbose { println!("Executing rrr4") }
-        },
+            if state.verbose {
+                println!("Executing rrr4");
+            }
+        }
         OpCodes::Trap(..) => {
-            if state.verbose { println!("Executing trap") }
+            if state.verbose {
+                println!("Executing trap");
+            }
             if let OpCodes::Trap(ra, rb, rc) = opcode {
                 if ra < 255 {
                     match state.r[ra as usize].get() {
                         0 => {
                             // Hault
-                            if state.verbose { println!("  Trap: Hault") }
-                            state.state = RunningState::Haulted
-                        },
+                            if state.verbose {
+                                println!("  Trap: Hault");
+                            }
+                            state.state = RunningState::Haulted;
+                        }
                         1 => {
                             // Non-blocking read
-                            if state.verbose { println!("  Trap: Non-blocking read") }
-                        },
+                            if state.verbose {
+                                println!("  Trap: Non-blocking read");
+                            }
+                        }
                         2 => {
                             // Non-blocking write
-                            if state.verbose { println!("  Trap: Non-blocking write") }
-                        },
+                            if state.verbose {
+                                println!("  Trap: Non-blocking write");
+                            }
+                        }
                         3 => {
                             // Blocking read
-                            if state.verbose { println!("  Trap: Blocking read") }
-                        },
+                            if state.verbose {
+                                println!("  Trap: Blocking read");
+                            }
+                        }
                         4 => {
                             // Breakpoint
-                            if state.verbose { println!("  Trap: Breakpoint") }
-                        },
+                            if state.verbose {
+                                println!("  Trap: Breakpoint");
+                            }
+                        }
                         _ => {
                             //
-                            if state.verbose { println!("  Trap: Unknown trap") }
-                        },
+                            if state.verbose {
+                                println!("  Trap: Unknown trap");
+                            }
+                        }
                     }
                 } else {
                     // User defined trap
                 }
             }
-        },
+        }
         // ================
         // iRX Instructions
         // ================
         OpCodes::Lea(..) => {
-            if state.verbose { println!("Executing lea") }
-            if let OpCodes::Lea(dst, disp, v) = opcode {
-                state.r[dst as usize].set((v as u32 + disp as u32) as u16);
-                if state.verbose { println!("  Load {:#06x} into R{}", state.r[dst as usize].get(), dst); }
+            if state.verbose {
+                println!("Executing lea");
             }
-        },
+            if let OpCodes::Lea(dst, disp, v) = opcode {
+                state.r[dst as usize].set((u32::from(v) + u32::from(disp)) as u16);
+                if state.verbose {
+                    println!("  Load {:#06x} into R{}", state.r[dst as usize].get(), dst);
+                }
+            }
+        }
         OpCodes::Load(..) => {
-            if state.verbose { println!("Executing load") }
+            if state.verbose {
+                println!("Executing load");
+            }
             if let OpCodes::Load(dst, disp, addr) = opcode {
-                let mut temp_addr = disp as u32 + addr as u32;
+                let mut temp_addr = u32::from(disp) + u32::from(addr);
                 if temp_addr > 65534 {
                     temp_addr -= 65534;
                 }
                 state.r[dst as usize].set(state.memory[temp_addr as usize]);
-                if state.verbose { println!("  Load {:#06x} from {:#06x} into R{}", state.r[dst as usize].get(), temp_addr, dst); }
-
+                if state.verbose {
+                    println!(
+                        "  Load {:#06x} from {:#06x} into R{}",
+                        state.r[dst as usize].get(),
+                        temp_addr,
+                        dst
+                    );
+                }
             }
-        },
+        }
         OpCodes::Store(..) => {
-            if state.verbose { println!("Executing store") }
+            if state.verbose {
+                println!("Executing store");
+            }
             if let OpCodes::Store(src, disp, addr) = opcode {
                 let dst_addr = addr + state.r[disp as usize].get();
                 state.memory[dst_addr as usize] = state.r[src as usize].get();
-                if state.verbose { println!("  Store {:#06x} into {:#06x} from R{}", state.r[src as usize].get(), dst_addr, src); }
+                if state.verbose {
+                    println!(
+                        "  Store {:#06x} into {:#06x} from R{}",
+                        state.r[src as usize].get(),
+                        dst_addr,
+                        src
+                    );
+                }
             }
         }
 
         _ => {
-            if state.verbose { println!("Unknown instruction. Haulting execution") }
+            if state.verbose {
+                println!("Unknown instruction. Haulting execution");
+            }
             state.state = RunningState::Haulted;
-        },
+        }
     }
-
-
 }

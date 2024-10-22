@@ -11,3 +11,15 @@ stdweb = "0.4.20"
 web-sys = "0.3.72"
 regex = "1.11.0"
 logos = { version = "0.14.2", features = ["debug"] }
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+correctness = "deny"
+suspicious = "deny"
+complexity = "deny"
+perf = "deny"
+style = "deny"
+pedantic = "deny"
+cargo = "allow"

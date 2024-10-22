@@ -1,23 +1,22 @@
-use std::error::Error;
 use crate::interpreter::memory::{word_to_nibbles, Memory};
 use crate::interpreter::register::Register;
-
+use std::error::Error;
 
 pub enum OpCodes {
     // iRRR instructions
-    Add(u8,u8,u8),
-    Sub(u8,u8,u8),
-    Mul(u8,u8,u8),
-    Div(u8,u8,u8),
-    Cmp(u8,u8,u8),
-    Addc(u8,u8,u8),
-    Muln(u8,u8,u8),
-    Divn(u8,u8,u8),
-    Rrr1(u8,u8,u8),
-    Rrr2(u8,u8,u8),
-    Rrr3(u8,u8,u8),
-    Rrr4(u8,u8,u8),
-    Trap(u8,u8,u8),
+    Add(u8, u8, u8),
+    Sub(u8, u8, u8),
+    Mul(u8, u8, u8),
+    Div(u8, u8, u8),
+    Cmp(u8, u8, u8),
+    Addc(u8, u8, u8),
+    Muln(u8, u8, u8),
+    Divn(u8, u8, u8),
+    Rrr1(u8, u8, u8),
+    Rrr2(u8, u8, u8),
+    Rrr3(u8, u8, u8),
+    Rrr4(u8, u8, u8),
+    Trap(u8, u8, u8),
 
     // iRX instructions
     Lea(u8, u8, u16),
@@ -30,17 +29,20 @@ pub enum OpCodes {
     Jumpz(u8, u8, u16),
     Jumpnz(u8, u8, u16),
     Testset(u8, u8, u16),
-
     // iEXP instructions
-
 }
 
-
 // Pass in slice of current + max possible following.
-pub fn next_op(memory: &Memory, pc: &mut Register, verbose: bool) -> Result<OpCodes, Box<dyn Error>> {
+pub fn next_op(
+    memory: &Memory,
+    pc: &mut Register,
+    verbose: bool,
+) -> Result<OpCodes, Box<dyn Error>> {
     let word: u16 = memory[pc.poinc(1).into()];
-    
-    if verbose { print!("Instruction: {:#06x}", word) }
+
+    if verbose {
+        print!("Instruction: {word:#06x}");
+    }
 
     // Extract individual nibbles from the word
     let nibbles = word_to_nibbles(word);
@@ -64,7 +66,9 @@ pub fn next_op(memory: &Memory, pc: &mut Register, verbose: bool) -> Result<OpCo
         // iRX instructions
         15 => {
             let word2 = memory[pc.poinc(1) as usize];
-            if verbose {print!(" {:#06x}", word2)}
+            if verbose {
+                print!(" {word2:#06x}");
+            }
             match nibbles[0] {
                 0 => Ok(OpCodes::Lea(nibbles[2], nibbles[1], word2)),
                 1 => Ok(OpCodes::Load(nibbles[2], nibbles[1], word2)),
@@ -81,9 +85,10 @@ pub fn next_op(memory: &Memory, pc: &mut Register, verbose: bool) -> Result<OpCo
         }
 
         // iEXP instructions
-
         _ => panic!("Invalid op code"),
     };
-    if verbose { print!("\n"); }
+    if verbose {
+        println!();
+    }
     opcode
 }

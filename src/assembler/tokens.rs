@@ -1,17 +1,20 @@
-use logos::Logos;
+use logos::{Logos, Skip};
 
 #[derive(Logos, Debug, PartialEq)]
-#[logos(skip r"[ \t\r\n\f]+")]
+#[logos(skip r"[\t\r\n\f]+")]
 #[logos(skip r";.*[\r\n]?")]
 pub enum Tokens {
     // Non-Instructions
-    #[regex(r"(?:[a-zA-Z][a-zA-Z0-9]*) +data +(?:[a-zA-Z][a-zA-Z0-9]*|[0-9]+|\$[a-fA-F0-9]{4})", |lex| lex.slice().to_owned())]
+    #[token(" ", |_| Skip)]
+    Ignore,
+    #[regex(r"(?:[a-zA-Z][a-zA-Z0-9]*) *\n?", |lex| lex.slice().to_owned())]
+    #[regex(r"(?:[a-zA-Z][a-zA-Z0-9]*) +data +(?:[a-zA-Z][a-zA-Z0-9]*|[0-9]+|\$[a-fA-F0-9]{4})"gm, |lex| lex.slice().to_owned())]
     Data(String),
     #[regex(r"[Rr][(?:[0-9])(?:1[0-5])],[Rr][(?:[0-9])(?:1[0-5])],[Rr][(?:[0-9])(?:1[0-5])]", |lex| lex.slice().to_owned())]
     RRRArg(String),
     #[regex(r"[Rr](?:[0-9]|1[0-5]),(?:[a-zA-Z][a-zA-Z0-9]+|[0-9]+|\$[a-fA-F0-9]{4})\[[Rr](?:[0-9]|1[0-5])]", |lex| lex.slice().to_owned())]
     IRXArg(String),
-    
+
     // RRR Instructions
     #[regex(r" *add *", |_| 0x0000_u16)]
     #[regex(r" *sub *", |_| 0x1000_u16)]
@@ -27,17 +30,18 @@ pub enum Tokens {
     #[regex(r" *rrr4 *", |_| 0xb000_u16)]
     #[regex(r" *trap *", |_| 0xc000_u16)]
     RRR(u16),
-    
+
     // iRX Instructions
     #[regex(r" *lea *", |_| 0xf000_u16)]
     #[regex(r" *load *", |_| 0xf001_u16)]
     #[regex(r" *store *", |_| 0xf002_u16)]
-    #[regex(r" *jump *", |_| 0xf003_u16)]
-    #[regex(r" *jumpc0 *", |_| 0xf004_u16)]
-    #[regex(r" *jumpc1 *", |_| 0xf005_u16)]
     #[regex(r" *jal *", |_| 0xf006_u16)]
     #[regex(r" *jumpnz *", |_| 0xf007_u16)]
     #[regex(r" *jumpz *", |_| 0xf008_u16)]
     #[regex(r" *testset *", |_| 0xf00b_u16)]
     IRX(u16),
+
+    // Jumps
+    #[regex(r" *jump[a-zA-Z]?[a-zA-Z]? +(?:(?:[a-zA-Z][a-zA-z0-9]*)|(?:\$[A-Fa-f0-9]{4}))(?:\[[Rr][(?:[0-9])(?:1[0-5])]])?", |lex| lex.slice().to_owned())]
+    Jump(String),
 }
