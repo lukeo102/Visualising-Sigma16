@@ -79,7 +79,7 @@ pub fn next_op(
                 6 => Ok(OpCodes::Jal(nibbles[2], nibbles[1], word2)),
                 7 => Ok(OpCodes::Jumpz(nibbles[2], nibbles[1], word2)),
                 8 => Ok(OpCodes::Jumpnz(nibbles[2], nibbles[1], word2)),
-                11 => Ok(OpCodes::Testset(nibbles[2], nibbles[1], word2)),
+                9 => Ok(OpCodes::Testset(nibbles[2], nibbles[1], word2)),
                 _ => panic!("Invalid op code"),
             }
         }
