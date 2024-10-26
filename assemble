@@ -1,7 +1,10 @@
-     lea    R1,6[R0]      ; R1 := 6
-     lea    R2,10[R0]      ; R1 := 6
-     add    R4,R1,R2
-     mul    R3,R1,R2      ; R3 := 6 * x = 42 (hex 002a)
+     lea    R1,1[R0]
+     lea    R2,2[R0]
+Loop 
+     add    R3,R1,R3
+     cmp    R3,R2
+     jumplt Loop[R0]
      store  R3,result[R0]
-     trap   R0,R0,R0      ; halt
+     trap   R0,R0,R0      
+     
 result data 0

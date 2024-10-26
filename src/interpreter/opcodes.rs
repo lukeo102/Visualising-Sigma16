@@ -1,14 +1,14 @@
 use crate::interpreter::memory::{word_to_nibbles, Memory};
 use crate::interpreter::register::Register;
+use crate::interpreter::interpreter::{R15_g, R15_eq, R15_L};
 use std::error::Error;
 
 pub enum OpCodes {
-    // iRRR instructions
+    // RRR instructions
     Add(u8, u8, u8),
     Sub(u8, u8, u8),
     Mul(u8, u8, u8),
     Div(u8, u8, u8),
-    Cmp(u8, u8, u8),
     Addc(u8, u8, u8),
     Muln(u8, u8, u8),
     Divn(u8, u8, u8),
@@ -17,18 +17,22 @@ pub enum OpCodes {
     Rrr3(u8, u8, u8),
     Rrr4(u8, u8, u8),
     Trap(u8, u8, u8),
+    
+    // RR instructions
+    Cmp(u8, u8),
+    
 
-    // iRX instructions
+    // RX instructions
     Lea(u8, u8, u16),
     Load(u8, u8, u16),
     Store(u8, u8, u16),
     Jump(u8, u8, u16),
-    Jumpc0(u8, u8, u16),
-    Jumpc1(u8, u8, u16),
+    Jumpc(fn(u16) -> bool, u8, u16), // jumpc0 and jumpc1
     Jal(u8, u8, u16),
     Jumpz(u8, u8, u16),
     Jumpnz(u8, u8, u16),
     Testset(u8, u8, u16),
+    
     // iEXP instructions
 }
 
@@ -53,7 +57,6 @@ pub fn next_op(
         1 => Ok(OpCodes::Sub(nibbles[2], nibbles[1], nibbles[0])),
         2 => Ok(OpCodes::Mul(nibbles[2], nibbles[1], nibbles[0])),
         3 => Ok(OpCodes::Div(nibbles[2], nibbles[1], nibbles[0])),
-        4 => Ok(OpCodes::Cmp(nibbles[2], nibbles[1], nibbles[0])),
         5 => Ok(OpCodes::Addc(nibbles[2], nibbles[1], nibbles[0])),
         6 => Ok(OpCodes::Muln(nibbles[2], nibbles[1], nibbles[0])),
         7 => Ok(OpCodes::Divn(nibbles[2], nibbles[1], nibbles[0])),
@@ -62,6 +65,9 @@ pub fn next_op(
         10 => Ok(OpCodes::Rrr3(nibbles[2], nibbles[1], nibbles[0])),
         11 => Ok(OpCodes::Rrr4(nibbles[2], nibbles[1], nibbles[0])),
         12 => Ok(OpCodes::Trap(nibbles[2], nibbles[1], nibbles[0])),
+        
+        // RR Instructions
+        4 => Ok(OpCodes::Cmp(nibbles[1], nibbles[0])),
 
         // iRX instructions
         15 => {
@@ -74,8 +80,18 @@ pub fn next_op(
                 1 => Ok(OpCodes::Load(nibbles[2], nibbles[1], word2)),
                 2 => Ok(OpCodes::Store(nibbles[2], nibbles[1], word2)),
                 3 => Ok(OpCodes::Jump(nibbles[2], nibbles[1], word2)),
-                4 => Ok(OpCodes::Jumpc0(nibbles[2], nibbles[1], word2)),
-                5 => Ok(OpCodes::Jumpc1(nibbles[2], nibbles[1], word2)),
+                4 => match nibbles[2] {
+                    0 => Ok(OpCodes::Jumpc(|r15| { r15 & (R15_eq | R15_L) > 0}, nibbles[1], word2)), // jumple
+                    2 => Ok(OpCodes::Jumpc(|r15| { r15 & R15_eq == 0}, nibbles[1], word2)), // jumpne
+                    4 => Ok(OpCodes::Jumpc(|r15| { r15 & (R15_eq | R15_g) > 0}, nibbles[1], word2)), // jumpge
+                    _ => panic!("Invalid op code"),
+                },
+                5 => match nibbles[2] {
+                    0 => Ok(OpCodes::Jumpc(|r15| { r15 & R15_g > 0}, nibbles[1], word2)), // jumpgt
+                    2 => Ok(OpCodes::Jumpc(|r15| { r15 & R15_eq > 0}, nibbles[1], word2)), // jumpeq
+                    4 => Ok(OpCodes::Jumpc(|r15| { r15 & R15_L > 0}, nibbles[1], word2)), // jumplt
+                    _ => panic!("Invalid op code"),
+                },
                 6 => Ok(OpCodes::Jal(nibbles[2], nibbles[1], word2)),
                 7 => Ok(OpCodes::Jumpz(nibbles[2], nibbles[1], word2)),
                 8 => Ok(OpCodes::Jumpnz(nibbles[2], nibbles[1], word2)),

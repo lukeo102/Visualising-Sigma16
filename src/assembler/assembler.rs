@@ -22,20 +22,26 @@ pub fn parse_code(code: &str) -> Vec<u16> {
         println!("{token:?}");
         match token {
             Ok(token) => match token {
-                Tokens::RRR(instruction) => {
-                    assembled.push(instruction);
-                    cursor += 1;
-                }
+                Tokens::RRR(instruction) |
+                Tokens::RR(instruction) |
                 Tokens::IRX(instruction) => {
                     assembled.push(instruction);
                     cursor += 1;
                 }
                 Tokens::RRRArg(args) => {
-                    let reg: u16 = parse_rrrargs(args);
+                    let reg: u16 = parse_rnargs(args, 3);
                     if assembled[cursor - 1] <= 0xc000_u16 {
                         assembled[cursor - 1] |= reg;
                     } else {
                         println!("RRR arguments found where no RRR instruction exists");
+                    }
+                }
+                Tokens::RRArg(args) => {
+                    let reg: u16 = parse_rnargs(args, 2);
+                    if assembled[cursor - 1] == 0x4000_u16 {
+                        assembled[cursor - 1] |= reg;
+                    } else {
+                        println!("RR arguments found where no RR instruction exists");
                     }
                 }
                 Tokens::IRXArg(args) => {
@@ -108,11 +114,11 @@ pub fn parse_code(code: &str) -> Vec<u16> {
     assembled
 }
 
-fn parse_rrrargs(args: String) -> u16 {
+fn parse_rnargs(args: String, n: usize) -> u16 {
     let mut arg = 0_u16;
 
     // Reverse Rd,Ra,Rb then loop over them
-    for (i, reg) in args.rsplit(',').enumerate().take(3) {
+    for (i, reg) in args.rsplit(',').enumerate().take(n) {
         arg |= reg[1..].parse::<u16>().unwrap() << (4 * i as u16);
     }
 
@@ -179,11 +185,9 @@ fn parse_jump(command: String, data_inserts: &mut HashMap<String, Vec<u16>>, cur
         Some("jumpgt") => 0xf005_u16,
         _ => {0_u16}
     };
-    println!("{:0x}", instruction);
     
     if let Some(register) = extracted_command.name("register") {
         instruction |= register.as_str().parse::<u16>().unwrap() << 4;
-        println!("{}", instruction);
     } 
     
     let address = 
@@ -196,6 +200,5 @@ fn parse_jump(command: String, data_inserts: &mut HashMap<String, Vec<u16>>, cur
             u16::from_str_radix(&addr.as_str()[1..], 16).unwrap()
         } else { 0 };
     
-    println!("{:0x} {}", instruction, address);
     (instruction, address)
 }

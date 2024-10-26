@@ -5,11 +5,11 @@ use crate::interpreter::{
 };
 
 const TC_MASK: u16 = 0b1000_0000_0000_0000;
-const R15_g: u16 = 0b1;
+pub(crate) const R15_g: u16 = 0b1;
 const R15_G: u16 = 0b10;
-const R15_eq: u16 = 0b100;
-const R15_L: u16 = 0b1000;
-const R15_lt: u16 = 0b1_0000;
+pub(crate) const R15_eq: u16 = 0b100;
+pub(crate) const R15_L: u16 = 0b1000;
+pub(crate) const R15_lt: u16 = 0b1_0000;
 const R15_v: u16 = 0b10_0000;
 const R15_V: u16 = 0b100_0000;
 const R15_C: u16 = 0b1000_0000;
@@ -244,30 +244,39 @@ fn execute(opcode: OpCodes, state: &mut State) {
             if state.verbose {
                 println!("Executing cmp");
             }
-            if let OpCodes::Cmp(rd, ra, rb) = opcode {
+            if let OpCodes::Cmp(ra, rd) = opcode {
                 let mut r15: u16 = 0;
 
                 if state.r[ra as usize].get() == state.r[rd as usize].get() {
-                    r15 |= 0b100; // Ra == Rb
+                    r15 |= R15_eq; // Ra == Rb
                     state.r[15].set(r15);
                 } else {
                     if state.r[ra as usize].get() > state.r[rd as usize].get() {
-                        r15 |= 0b10;
+                        r15 |= R15_G; // Ra > Rb (binary)
                     }
-                    // Ra > Rb (binary)
                     else {
-                        r15 |= 0b10000;
-                    } // Ra < Rb (binary)
-                    if (state.r[ra as usize].get() & TC_MASK) > 0
-                        || (state.r[rd as usize].get() & TC_MASK) > 0
-                    {
+                        r15 |= R15_lt; // Ra < Rb (binary)
+                    }
+                    
+                    // If either Ra or Rd is twos complement, 
+                    //      then if Ra is bigger than Rd
+                    //          then Ra is smaller than Rd
+                    //      otherwise, Rd is smaller than Ra
+                    // otherwise if Ra is less than Rd
+                    //      then Ra is smaller than Rd
+                    // otherwise Rd is smaller than Ra                    
+                    if (state.r[ra as usize].get() & TC_MASK) > 0 ||
+                        (state.r[rd as usize].get() & TC_MASK) > 0 {
                         if state.r[ra as usize].get() > state.r[rd as usize].get() {
-                            r15 |= 0b1000;
+                            r15 |= R15_L; // Ra < Rb (twos complement)
+                        } else {
+                            r15 |= R15_g; // Ra > Rb (twos complement)
                         }
-                        // Ra < Rb (twos complement)
-                        else {
-                            r15 |= 0b1;
-                        } // Ra > Rb (twos complement)
+                    } else if state.r[ra as usize].get() < state.r[rd as usize].get() {
+                        r15 |= R15_L; // Ra < Rb (twos complement)
+                    } else {
+                        r15 |= R15_g; // Ra > Rb (twos complement)
+
                     }
                 }
 
@@ -394,7 +403,19 @@ fn execute(opcode: OpCodes, state: &mut State) {
                     );
                 }
             }
-        }
+        },
+        OpCodes::Jumpc(..) => {
+            if state.verbose { println!("Executing Jump") }
+            if let OpCodes::Jumpc(cond, disp, dest) = opcode {
+                if cond(state.r[15].get()) {
+                    let mut addr = dest as u32 + disp as u32;
+                    if addr > u16::MAX as u32 {
+                        addr -= u16::MAX as u32;
+                    }
+                    state.pc.set(addr as u16)
+                }
+            }
+        },
 
         _ => {
             if state.verbose {
