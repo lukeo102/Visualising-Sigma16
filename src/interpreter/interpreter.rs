@@ -408,7 +408,7 @@ fn execute(opcode: OpCodes, state: &mut State) {
             if state.verbose { println!("Executing Jump") }
             if let OpCodes::Jumpc(cond, disp, dest) = opcode {
                 if cond(state.r[15].get()) {
-                    let mut addr = dest as u32 + disp as u32;
+                    let mut addr = dest as u32 + state.r[disp as usize].get() as u32;
                     if addr > u16::MAX as u32 {
                         addr -= u16::MAX as u32;
                     }
