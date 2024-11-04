@@ -253,20 +253,20 @@ fn execute(opcode: OpCodes, state: &mut State) {
                 } else {
                     if state.r[ra as usize].get() > state.r[rd as usize].get() {
                         r15 |= R15_G; // Ra > Rb (binary)
-                    }
-                    else {
+                    } else {
                         r15 |= R15_lt; // Ra < Rb (binary)
                     }
-                    
-                    // If either Ra or Rd is twos complement, 
+
+                    // If either Ra or Rd is twos complement,
                     //      then if Ra is bigger than Rd
                     //          then Ra is smaller than Rd
                     //      otherwise, Rd is smaller than Ra
                     // otherwise if Ra is less than Rd
                     //      then Ra is smaller than Rd
-                    // otherwise Rd is smaller than Ra                    
-                    if (state.r[ra as usize].get() & TC_MASK) > 0 ||
-                        (state.r[rd as usize].get() & TC_MASK) > 0 {
+                    // otherwise Rd is smaller than Ra
+                    if (state.r[ra as usize].get() & TC_MASK) > 0
+                        || (state.r[rd as usize].get() & TC_MASK) > 0
+                    {
                         if state.r[ra as usize].get() > state.r[rd as usize].get() {
                             r15 |= R15_L; // Ra < Rb (twos complement)
                         } else {
@@ -276,7 +276,6 @@ fn execute(opcode: OpCodes, state: &mut State) {
                         r15 |= R15_L; // Ra < Rb (twos complement)
                     } else {
                         r15 |= R15_g; // Ra > Rb (twos complement)
-
                     }
                 }
 
@@ -403,9 +402,11 @@ fn execute(opcode: OpCodes, state: &mut State) {
                     );
                 }
             }
-        },
+        }
         OpCodes::Jumpc(..) => {
-            if state.verbose { println!("Executing Jump") }
+            if state.verbose {
+                println!("Executing Jump")
+            }
             if let OpCodes::Jumpc(cond, disp, dest) = opcode {
                 if cond(state.r[15].get()) {
                     let mut addr = dest as u32 + state.r[disp as usize].get() as u32;
@@ -415,7 +416,7 @@ fn execute(opcode: OpCodes, state: &mut State) {
                     state.pc.set(addr as u16)
                 }
             }
-        },
+        }
 
         _ => {
             if state.verbose {

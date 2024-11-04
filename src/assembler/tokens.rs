@@ -31,7 +31,7 @@ pub enum Tokens {
     #[regex(r" +rrr4 +", |_| 0xb000_u16)]
     #[regex(r" +trap +", |_| 0xc000_u16)]
     RRR(u16),
-    
+
     // RR Instructions
     #[regex(r" +cmp +", |_| 0x4000_u16)]
     RR(u16),
