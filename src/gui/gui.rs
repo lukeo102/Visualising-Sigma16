@@ -1,6 +1,4 @@
-use wasm_bindgen::prelude::*;
-
-fn main() {
+pub fn run_app() {
     use eframe::wasm_bindgen::JsCast as _;
 
     // Redirect `log` message to `console.log` and friends:
@@ -24,7 +22,7 @@ fn main() {
             .start(
                 canvas,
                 web_options,
-                Box::new(|cc| Ok(Box::new(crate::app::VisualisingSigma16::new(cc)))),
+                Box::new(|cc| Ok(Box::new(crate::gui::app::VisualisingSigma16::new(cc)))),
             )
             .await;
 

@@ -1,4 +1,4 @@
-use crate::code_editor::CodeEditor;
+use crate::gui::code_editor::CodeEditor;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
