@@ -14,16 +14,18 @@ regex = "1.11.0"
 logos = { version = "0.14.2", features = ["debug"] }
 serde = { version = "1.0.213", features = ["derive"] }
 egui = "0.29.1"
-eframe = { version = "0.29", default-features = false, features = [
+egui_dock = "0.14.0"
+egui_extras = { version = "0.29.1", features = ["serde", "syntect"] }
+enum-map = "2.7.3"
+eframe = { version = "0.29", features = [
     "accesskit",     # Make egui compatible with screen readers. NOTE: adds a lot of dependencies.
     "default_fonts", # Embed the default egui fonts.
     "glow",          # Use the glow rendering backend. Alternative: "wgpu".
     "persistence",   # Enable restoring app state when restarting the app.
 ] }
 log = "0.4"
-web-sys = "0.3.70"
+web-sys = { version = "0.3.70", features = ["Window", "Document", "Element", "HtmlCanvasElement"] }
 wasm-bindgen-futures = "0.4"
-
 
 [profile.release]
 opt-level = 2 # fast and small wasm

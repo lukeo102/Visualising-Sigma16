@@ -55,10 +55,10 @@ pub fn parse_code(code: &str) -> Vec<u16> {
                 }
                 Tokens::Data(args) => {
                     regex!(
-                        REGEX = r"(?:(?P<name>[a-zA-Z][a-zA-Z0-9]*) +(?P<data>data) +(?:(?P<var>[a-zA-Z][a-zA-Z0-9]*)|(?P<const>[0-9]+)|(?P<hex>\$[a-fA-F0-9]{4})))|(?:(?P<label>[a-zA-Z][a-zA-Z0-9]*) *\n?)"
+                        regex = r"(?:(?P<name>[a-zA-Z][a-zA-Z0-9]*) +(?P<data>data) +(?:(?P<var>[a-zA-Z][a-zA-Z0-9]*)|(?P<const>[0-9]+)|(?P<hex>\$[a-fA-F0-9]{4})))|(?:(?P<label>[a-zA-Z][a-zA-Z0-9]*) *\n?)"
                     );
 
-                    let extracted = REGEX.captures(&args).unwrap();
+                    let extracted = regex.captures(&args).unwrap();
 
                     if let Some(value) = extracted.name("data") {
                         // If data
@@ -134,12 +134,12 @@ fn parse_irxargs(
     data_inserts: &mut HashMap<String, Vec<u16>>,
 ) -> (u16, u16) {
     regex!(
-        REGEX = r"[Rr](?P<rd>[0-9]|1[0-5]),(?:(?P<var_match>[a-zA-Z][a-zA-Z0-9]+)|(?P<cons>[0-9]+)|(?P<hex>\$[a-fA-F0-9]{4}))\[[Rr](?P<disp>[0-9]|1[0-5])]"
+        regex = r"[Rr](?P<rd>[0-9]|1[0-5]),(?:(?P<var_match>[a-zA-Z][a-zA-Z0-9]+)|(?P<cons>[0-9]+)|(?P<hex>\$[a-fA-F0-9]{4}))\[[Rr](?P<disp>[0-9]|1[0-5])]"
     );
 
     let mut arg = 0_u16;
     let mut addr = 0_u16;
-    let extarcted_args = REGEX.captures(args).unwrap();
+    let extarcted_args = regex.captures(args).unwrap();
 
     arg |= extarcted_args
         .name("rd")
@@ -185,10 +185,10 @@ fn parse_jump(
     cursor: usize,
 ) -> (u16, u16) {
     regex!(
-        REGEX = r"(?P<type>jump(?:[a-zA-Z]{2})?) +(?:(?P<label>[A-z][A-Za-z0-9]*)|(?P<const>\$[A-Fa-f0-9]{4}))(?:\[R(?P<register>[0-9]|1[0-5])])?"
+        regex = r"(?P<type>jump(?:[a-zA-Z]{2})?) +(?:(?P<label>[A-z][A-Za-z0-9]*)|(?P<const>\$[A-Fa-f0-9]{4}))(?:\[R(?P<register>[0-9]|1[0-5])])?"
     );
 
-    let extracted_command = REGEX.captures(&command).unwrap();
+    let extracted_command = regex.captures(&command).unwrap();
     let mut instruction = match Some(extracted_command.name("type").unwrap().as_str()) {
         Some("jump") => 0xf003_u16,
         Some("jumplt") => 0xf405_u16,

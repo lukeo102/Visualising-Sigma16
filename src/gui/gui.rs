@@ -1,11 +1,13 @@
+use web_sys::wasm_bindgen::JsCast as _;
+use eframe;
+
 pub fn run_app() {
-    use eframe::wasm_bindgen::JsCast as _;
 
     // Redirect `log` message to `console.log` and friends:
     eframe::WebLogger::init(log::LevelFilter::Debug).ok();
 
     let web_options = eframe::WebOptions::default();
-
+    
     wasm_bindgen_futures::spawn_local(async {
         let document = web_sys::window()
             .expect("No window")
@@ -17,7 +19,7 @@ pub fn run_app() {
             .expect("Failed to find the_canvas_id")
             .dyn_into::<web_sys::HtmlCanvasElement>()
             .expect("the_canvas_id was not a HtmlCanvasElement");
-
+        
         let start_result = eframe::WebRunner::new()
             .start(
                 canvas,

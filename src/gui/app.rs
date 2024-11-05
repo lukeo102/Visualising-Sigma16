@@ -1,25 +1,21 @@
-use crate::gui::code_editor::CodeEditor;
+use eframe::epaint::text::LayoutJob;
+use crate::gui::code_editor::{code_editor_frame, CodeEditor};
 
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct VisualisingSigma16 {
-    // Example stuff:
-    label: String,
-
-    #[serde(skip)] // This how you opt-out of serialization of a field
-    value: f32,
-
-    code_editor: CodeEditor,
+    show_code_editor: bool,
+    pub code_editor: CodeEditor,
+    pub code_hex: CodeEditor,
 }
 
 impl Default for VisualisingSigma16 {
     fn default() -> Self {
         Self {
-            // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
+            
+            show_code_editor: true,
             code_editor: CodeEditor::default(),
+            code_hex: CodeEditor::default(),
         }
     }
 }
@@ -49,25 +45,12 @@ impl eframe::App for VisualisingSigma16 {
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
 
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // The top panel is often a good place for a menu bar:
+        egui::Window::new("Code Editor")
+            .resizable([true, true])
+            .show(ctx, |ui| {
+            code_editor_frame(ui, self, ctx);
 
-            egui::menu::bar(ui, |ui| {
-                // NOTE: no File->Quit on web pages!
-                let is_web = cfg!(target_arch = "wasm32");
-                if !is_web {
-                    ui.menu_button("File", |ui| {
-                        if ui.button("Quit").clicked() {
-                            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                        }
-                    });
-                    ui.add_space(16.0);
-                }
-
-                egui::widgets::global_theme_preference_buttons(ui);
-            });
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -75,20 +58,14 @@ impl eframe::App for VisualisingSigma16 {
             ui.heading("eframe template");
 
             ui.horizontal(|ui| {
-                CodeEditor::ui(&mut self.code_editor, ui);
-            });
 
-            // ui.add(egui::Slider::new(&mut self.value, 0.0..=10.0).text("value"));
-            // if ui.button("Increment").clicked() {
-            //     self.value += 1.0;
-            // }
+                // CodeEditor::editable(&mut self.code_editor, ui);
+                // self.code_hex.code = format_code(parse_code(self.code_editor.code.as_str()));
+                // CodeEditor::un_editable(&mut self.code_hex, ui);
+            });
 
             ui.separator();
 
-            // ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-            //     powered_by_egui_and_eframe(ui);
-            //     egui::warn_if_debug_build(ui);
-            // });
         });
     }
 }
