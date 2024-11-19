@@ -24,7 +24,7 @@ pub struct Assembler {
     line: usize,
     cursor: usize,
     data_inserts: HashMap<String, Vec<u16>>,
-    data_locations: HashMap<String, u16>,
+    data_locations: HashMap<String, (u16, usize)>,
 }
 
 impl Assembler {
@@ -35,7 +35,7 @@ impl Assembler {
             symbol_table: HashMap::new(),
             mem_to_code: HashMap::new(),
             errors: Vec::new(),
-            last_token_processed: Tokens::Ignore,
+            last_token_processed: Tokens::Newline,
             line: 1,
             cursor: 0,
             data_inserts: HashMap::new(),
@@ -66,13 +66,19 @@ impl Assembler {
         }
 
         // Add variables
-        for (name, dest) in &self.data_locations {
+        for (name, (dest, line)) in &self.data_locations {
             println!("Adding {name} vars");
             if let Some(locations) = self.data_inserts.get(name) {
                 for location in locations {
                     self.assembled[*location as usize] = *dest;
                 }
                 self.data_inserts.remove(name);
+            } else {
+                self.errors.push(AssemblingError {
+                    message: "Label is not used.".to_string(),
+                    line: *line,
+                    resolution: "Either a spelling mistake or it is planned to be used later.\nYou can add a jump to this label after trap R0,R0,R0 to get rid of this error.".to_string()
+                })
             }
             self.symbol_table
                 .insert(name.clone(), dest.clone() as usize);
@@ -176,16 +182,18 @@ impl Assembler {
                             .or_default()
                             .push(self.cursor as u16);
                     }
-                    self.data_locations.insert(name, self.cursor as u16);
+                    self.data_locations
+                        .insert(name, (self.cursor as u16, self.line));
                     self.mem_to_code.insert(self.cursor, self.line);
                     self.cursor += 1;
                 } else {
                     // else jump label
                     let name = extracted["label"].to_string();
 
-                    self.data_locations
-                        .insert(name.as_str().parse().unwrap(), self.cursor as u16);
-                    self.line += 1;
+                    self.data_locations.insert(
+                        name.as_str().parse().unwrap(),
+                        (self.cursor as u16, self.line),
+                    );
                 }
             }
             Tokens::Jump(command) => {

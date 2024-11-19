@@ -6,18 +6,31 @@ pub(crate) struct Code {
     pub code: String,
     pub memory_to_code: HashMap<usize, usize>,
     pub symbol_table: HashMap<String, usize>,
+    pub errors: bool,
 }
 
 impl Code {
     pub fn new(code: String) -> Code {
+        let mut errors = false;
         let mut assembler = Assembler::new(code.clone());
         assembler.assemble();
+
+        if !assembler.errors.is_empty() {
+            errors = true;
+            for error in assembler.errors {
+                println!(
+                    "message: {}\nline: {}\n resolution {}",
+                    error.message, error.line, error.resolution
+                );
+            }
+        }
 
         Self {
             memory: assembler.assembled,
             code: assembler.code,
             memory_to_code: assembler.mem_to_code,
             symbol_table: assembler.symbol_table,
+            errors,
         }
     }
 

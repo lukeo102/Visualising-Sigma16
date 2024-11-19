@@ -9,7 +9,7 @@ pub enum Tokens {
     Newline,
     #[regex(" +", |_| Skip)]
     Ignore,
-    #[regex(r"(?:[a-zA-Z][a-zA-Z0-9_]*) *\n?", |lex| lex.slice().to_owned())]
+    #[regex(r"(?:[a-zA-Z][a-zA-Z0-9_]*) *", |lex| lex.slice().to_owned())]
     #[regex(r"(?:[a-zA-Z][a-zA-Z0-9_]*) +data +(?:[a-zA-Z][a-zA-Z0-9_]*|[0-9]+|\$[a-fA-F0-9]{4})"gm, |lex| lex.slice().to_owned())]
     Data(String),
     #[regex(r"[Rr][(?:[0-9])(?:1[0-5])],[Rr][(?:[0-9])(?:1[0-5])],[Rr][(?:[0-9])(?:1[0-5])]", |lex| lex.slice().to_owned())]

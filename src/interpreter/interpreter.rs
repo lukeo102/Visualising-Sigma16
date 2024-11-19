@@ -17,14 +17,6 @@ const R15_S: u16 = 0b1_0000_0000;
 const R15_s: u16 = 0b10_0000_0000;
 const R15_f: u16 = 0b100_0000_0000;
 
-pub fn init(memory: &[u16]) -> State {
-    let mut state: State = State::new(memory);
-
-    state.pc.set(0);
-
-    state
-}
-
 pub fn run(state: &mut State) {
     let mut running = true;
     if state.verbose {
@@ -246,14 +238,17 @@ fn execute(opcode: OpCodes, state: &mut State) {
             }
             if let OpCodes::Cmp(ra, rd) = opcode {
                 let mut r15: u16 = 0;
-
+                println!("R{ra} cmp R{rd}");
                 if state.r[ra as usize].get() == state.r[rd as usize].get() {
+                    print!("eq");
                     r15 |= R15_eq; // Ra == Rb
                     state.r[15].set(r15);
                 } else {
                     if state.r[ra as usize].get() > state.r[rd as usize].get() {
+                        print!("G");
                         r15 |= R15_G; // Ra > Rb (binary)
                     } else {
+                        print!("lt");
                         r15 |= R15_lt; // Ra < Rb (binary)
                     }
 
@@ -268,17 +263,21 @@ fn execute(opcode: OpCodes, state: &mut State) {
                         || (state.r[rd as usize].get() & TC_MASK) > 0
                     {
                         if state.r[ra as usize].get() > state.r[rd as usize].get() {
+                            print!("L");
                             r15 |= R15_L; // Ra < Rb (twos complement)
                         } else {
+                            print!("g");
                             r15 |= R15_g; // Ra > Rb (twos complement)
                         }
                     } else if state.r[ra as usize].get() < state.r[rd as usize].get() {
+                        print!("L");
                         r15 |= R15_L; // Ra < Rb (twos complement)
                     } else {
+                        print!("g");
                         r15 |= R15_g; // Ra > Rb (twos complement)
                     }
                 }
-
+                print!("\n");
                 state.r[15].set(r15);
             }
         }

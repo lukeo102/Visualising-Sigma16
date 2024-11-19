@@ -2,21 +2,20 @@ use crate::assembler::code::Code;
 use crate::gui::app::VisualisingSigma16;
 use crate::gui::syntax_highlighting::{highlight, CodeTheme};
 use crate::gui::util::format_code;
-use egui::{Galley, Response};
+use egui::{Galley, Layout, Response, TextBuffer};
 use std::sync::Arc;
+use web_sys::js_sys::Function;
 
 pub fn code_editor_frame(ui: &mut egui::Ui, app: &mut VisualisingSigma16, ctx: &egui::Context) {
     let frame = egui::frame::Frame::default()
         .fill(egui::Color32::BLACK)
         .show(ui, |frame_ui| {
-            egui::Frame::default().show(frame_ui, |ui| {
-                CodeEditor::editable(&mut app.code_editor, ui);
-            });
-            egui::Frame::default().show(frame_ui, |ui| {
-                app.code_hex.code =
-                    format_code(Code::new(app.code_editor.code.clone()).memory.clone());
-                CodeEditor::un_editable(&mut app.code_hex, ui);
-            });
+            let mut layout = Layout::default();
+            layout.horizontal_align();
+            frame_ui.with_layout(layout, |frame_ui| {
+                CodeEditor::make_line_counter(&mut app.code_editor, frame_ui);
+                CodeEditor::make_editor(&mut app.code_editor, frame_ui)
+            })
         });
 }
 
@@ -35,47 +34,44 @@ impl Default for CodeEditor {
 }
 
 impl CodeEditor {
-    const LAYOUTER: fn(&egui::Ui, &str, f32) -> Arc<Galley> =
-        |ui: &egui::Ui, string: &str, wrap_width: f32| {
-            let mut layout_job: egui::text::LayoutJob = egui::text::LayoutJob::default();
-            layout_job.wrap.max_width = f32::INFINITY;
-            ui.fonts(|f| f.layout_job(layout_job))
-        };
-
-    pub(crate) fn editable(&mut self, ui: &mut egui::Ui) -> Response {
+    pub fn make_editor(&mut self, ui: &mut egui::Ui) -> Response {
         let Self { code } = self;
-        let language = "Sigma16";
-        let theme = CodeTheme::default();
-
-        let mut layouter = |ui: &egui::Ui, string: &str, _wrap_width: f32| {
-            let layout_job = highlight(ui.ctx(), &theme, string, language);
-            // layout_job.wrap.max_width = wrap_width; // no wrapping
-            ui.fonts(|font| font.layout_job(layout_job))
-        };
-
-        let editor = ui.add(
+        ui.add(
             egui::TextEdit::multiline(code)
                 .font(egui::TextStyle::Monospace) // for cursor height
                 .code_editor()
                 .desired_rows(10)
                 .lock_focus(true)
                 .desired_width(f32::INFINITY)
-                .layouter(&mut layouter),
-        );
-        editor
+                .layouter(&mut |ui: &egui::Ui, string: &str, _wrap_width: f32| {
+                    CodeEditor::layouter(ui, string, _wrap_width)
+                }),
+        )
     }
 
-    pub(crate) fn un_editable(&mut self, ui: &mut egui::Ui) -> Response {
+    pub fn make_line_counter(&mut self, ui: &mut egui::Ui) -> Response {
         let Self { code } = self;
 
-        let editor = ui.add(
-            egui::TextEdit::multiline(&mut code.as_str())
-                .font(egui::TextStyle::Monospace) // for cursor height
+        let line_count = code.as_str().lines().count();
+        let mut line_numbers_builder: Vec<String> = Vec::with_capacity(line_count);
+        for i in 0..line_count {
+            line_numbers_builder.push(format!("{}\n", i));
+        }
+        let line_numbers = line_numbers_builder.concat();
+
+        ui.add(
+            egui::TextEdit::multiline(&mut line_numbers.as_str())
+                .font(egui::TextStyle::Monospace)
                 .code_editor()
                 .desired_rows(10)
-                .lock_focus(true)
-                .desired_width(f32::INFINITY), // .layouter(&mut Self::LAYOUTER.clone())
-        );
-        editor
+                .desired_width(3.0)
+                .lock_focus(false),
+        )
+    }
+
+    fn layouter(ui: &egui::Ui, string: &str, _wrap_width: f32) -> Arc<Galley> {
+        let layout_job = highlight(ui.ctx(), &CodeTheme::default(), string, "Sigma16");
+        // layout_job.wrap.max_width = wrap_width; // no wrapping
+        ui.fonts(|font| font.layout_job(layout_job))
     }
 }

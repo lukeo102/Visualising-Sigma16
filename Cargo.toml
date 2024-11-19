@@ -5,19 +5,21 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[[bin]]
-name = "cli"
-path = "src/cli/main.rs"
-
-[[bin]]
-name = "gui"
-path = "src/gui/main.rs"
+#[[bin]]
+#name = "cli"
+#path = "src/cli/main.rs"
+#
+#[[bin]]
+#name = "gui"
+#path = "src/gui/main.rs"
 
 [package.metadata.docs.rs]
 all-features = true
 target_arch = "wasm32"
 
 [dependencies]
+#tui = "0.19"
+#crossterm = "0.25"
 regex = "1.11.0"
 logos = { version = "0.14.2", features = ["debug"] }
 serde = { version = "1.0.213", features = ["derive"] }
