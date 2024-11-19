@@ -3,3 +3,4 @@ pub(crate) mod gui;
 mod code_editor;
 mod util;
 mod syntax_highlighting;
+mod code_runner;

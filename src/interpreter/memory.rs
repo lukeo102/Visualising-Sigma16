@@ -1,7 +1,8 @@
 pub const U16_MAX: u16 = 65535;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Memory {
-    contents: [u16; U16_MAX as usize],
+    contents: Vec<u16>,
     altered_i: Vec<usize>,
     mem_used: Vec<usize>,
 }
@@ -31,12 +32,12 @@ impl Memory {
     pub fn new(init: Option<&[u16]>) -> Memory {
         let mut mem = Memory {
             mem_used: Vec::new(),
-            contents: [0u16; U16_MAX as usize],
+            contents: Vec::with_capacity(U16_MAX as usize),
             altered_i: Vec::new(),
         };
         if let Some(init) = init {
             for i in 0..init.len() {
-                mem.contents[i] = init[i];
+                mem.contents.push(init[i]);
                 mem.mem_used.push(i);
             }
         }

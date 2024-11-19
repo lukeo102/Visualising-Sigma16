@@ -5,9 +5,17 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "cli"
+path = "src/cli/main.rs"
+
+[[bin]]
+name = "gui"
+path = "src/gui/main.rs"
+
 [package.metadata.docs.rs]
 all-features = true
-target = "wasm32-unknown-unknown"
+target_arch = "wasm32"
 
 [dependencies]
 regex = "1.11.0"
@@ -34,15 +42,3 @@ opt-level = 2 # fast and small wasm
 [profile.dev.package."*"]
 opt-level = 2
 
-
-[lints.rust]
-unsafe_code = "allow"
-
-[lints.clippy]
-correctness = "allow"
-suspicious = "allow"
-complexity = "allow"
-perf = "allow"
-style = "allow"
-pedantic = "allow"
-cargo = "allow"

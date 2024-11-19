@@ -1,7 +1,9 @@
 use crate::interpreter::memory::Memory;
 use crate::interpreter::register::Register;
+use std::collections::HashMap;
 use std::fmt::Display;
 
+#[cfg_attr(target_arch = "wasm32", derive(serde::Serialize, serde::Deserialize))]
 pub enum RunningState {
     Init,
     Ready,
@@ -28,6 +30,7 @@ impl Display for RunningState {
     }
 }
 
+#[cfg_attr(target_arch = "wasm32", derive(serde::Serialize, serde::Deserialize))]
 pub struct State {
     pub pc: Register,
     pub ir: Register,
@@ -35,6 +38,10 @@ pub struct State {
     pub memory: Memory,
     pub state: RunningState,
     pub verbose: bool,
+    symbol_table: HashMap<String, u16>,
+    monitored_symbols: Vec<String>,
+    monitored_addresses: Vec<u16>,
+    monitored_registers: Vec<usize>,
 }
 
 impl State {
@@ -46,9 +53,79 @@ impl State {
             memory: (Memory::new(Option::from(memory))),
             state: RunningState::Init,
             verbose: false,
+            symbol_table: HashMap::new(),
+            monitored_symbols: Vec::new(),
+            monitored_addresses: Vec::new(),
+            monitored_registers: Vec::new(),
         };
         state.r[0].set_r0();
         state
+    }
+
+    pub fn monitor_check(&mut self) {}
+
+    pub fn monitor_enable(&mut self, element: MonitorType) -> Option<MonitorType> {
+        match element {
+            MonitorType::Address(item) => {
+                if self.monitored_addresses.contains(&item) {
+                    None
+                } else {
+                    self.monitored_addresses.push(item.clone());
+                    Some(element)
+                }
+            }
+            MonitorType::Symbol(item) => {
+                if self.monitored_symbols.contains(&item) {
+                    None
+                } else {
+                    self.monitored_symbols.push(item.clone());
+                    Some(MonitorType::Symbol(item))
+                }
+            }
+            MonitorType::Register(item) => {
+                if self.monitored_registers.contains(&item) {
+                    None
+                } else {
+                    self.monitored_registers.push(item.clone());
+                    Some(element)
+                }
+            }
+        }
+    }
+
+    pub fn monitor_disable(&mut self, element: MonitorType) -> Option<MonitorType> {
+        match element {
+            MonitorType::Address(item) => {
+                let idx = self.monitored_addresses.iter().position(|x| *x == item);
+                match idx {
+                    Some(i) => {
+                        self.monitored_addresses.remove(i);
+                        Some(element)
+                    }
+                    None => None,
+                }
+            }
+            MonitorType::Symbol(item) => {
+                let idx = self.monitored_symbols.iter().position(|x| *x == item);
+                match idx {
+                    Some(i) => {
+                        self.monitored_symbols.remove(i);
+                        Some(MonitorType::Symbol(item))
+                    }
+                    None => None,
+                }
+            }
+            MonitorType::Register(item) => {
+                let idx = self.monitored_registers.iter().position(|x| *x == item);
+                match idx {
+                    Some(i) => {
+                        self.monitored_registers.remove(i);
+                        Some(element)
+                    }
+                    None => None,
+                }
+            }
+        }
     }
 
     pub fn print_verbose(&mut self) {
@@ -76,4 +153,10 @@ impl State {
         println!("Running state: {}", self.state);
         println!("\n\n");
     }
+}
+
+pub enum MonitorType {
+    Address(u16),
+    Symbol(String),
+    Register(usize),
 }

@@ -1,0 +1,15 @@
+to make memory monitoring
+  monitor line of code
+    pause execution when line reached
+    code to memory location tranlation needed
+      code line -> memory location -> monitor memory location
+  monitor memory location
+    pause execution when location accessed
+    ability to update state on memory location access
+      memory access returns enum instead of value (Success(Value), Monitored(Value), EditedSuccess, EditedMonitored(OldValue, NewValue))
+      match on return enum
+        can implement the same with registers
+  monitor variable
+    pause execution when variable accessed
+    symbol table needed
+      variable name -> memory location -> monitor memory location

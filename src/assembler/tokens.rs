@@ -1,10 +1,12 @@
 use logos::{Logos, Skip};
 
-#[derive(Logos, Debug, PartialEq)]
-#[logos(skip r"[\t\r\n\f]+")]
-#[logos(skip r" *;.*")]
+#[derive(Logos, Debug, PartialEq, Clone)]
+#[logos(skip r"[\t\r\f]+")]
 pub enum Tokens {
     // Non-Instructions
+    #[token("\n")]
+    #[regex(r" *;.*\n")]
+    Newline,
     #[regex(" +", |_| Skip)]
     Ignore,
     #[regex(r"(?:[a-zA-Z][a-zA-Z0-9_]*) *\n?", |lex| lex.slice().to_owned())]

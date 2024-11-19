@@ -1,4 +1,6 @@
 use eframe::epaint::text::LayoutJob;
+use log::{log, Level};
+use crate::assembler::code::Code;
 use crate::gui::code_editor::{code_editor_frame, CodeEditor};
 
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -52,6 +54,13 @@ impl eframe::App for VisualisingSigma16 {
             code_editor_frame(ui, self, ctx);
 
         });
+
+        let code = Code::new(self.code_editor.code.clone());
+        let mem_loc_count = code.get_memory_location_count();
+        log!(Level::Info, "{}", code.get_code());
+        for i in 0..mem_loc_count {
+            log!(Level::Info, "{:#04}: {}", i, code.code_line_from_mem_loc(i).0);
+        }
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's

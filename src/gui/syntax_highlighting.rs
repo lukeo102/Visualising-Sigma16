@@ -1,7 +1,6 @@
 use egui::text::LayoutJob;
+use serde::Serializer;
 
-
-/// Memoized Code highlighting
 pub fn highlight(ctx: &egui::Context, theme: &CodeTheme, code: &str, language: &str) -> LayoutJob {
     impl egui::util::cache::ComputerMut<(&CodeTheme, &str, &str), LayoutJob> for Highlighter {
         fn compute(&mut self, (theme, code, lang): (&CodeTheme, &str, &str)) -> LayoutJob {
@@ -20,7 +19,6 @@ pub fn highlight(ctx: &egui::Context, theme: &CodeTheme, code: &str, language: &
     })
 }
 
-// ----------------------------------------------------------------------------
 
 #[derive(Clone, Copy, PartialEq)]
 // #[derive(serde::Deserialize, serde::Serialize)]
@@ -40,6 +38,7 @@ enum TokenType {
 pub struct CodeTheme {
     formats: enum_map::EnumMap<TokenType, egui::TextFormat>,
 }
+
 
 impl Default for CodeTheme {
     fn default() -> Self {
@@ -112,7 +111,7 @@ impl Highlighter {
                 );
                 text = &text[end..];
             } else {
-                let mut it = text.char_indices();
+            let mut it = text.char_indices();
                 it.next();
                 let end = it.next().map_or(text.len(), |(idx, _chr)| idx);
                 job.append(

@@ -1,3 +1,4 @@
-pub mod assembler;
-// mod assembler;
+mod assembler;
+pub(crate) mod code;
+pub(crate) mod error;
 mod tokens;
