@@ -19,14 +19,14 @@ const R15_f: u16 = 0b100_0000_0000;
 
 pub fn run(state: &mut State) {
     let mut running = true;
-    if state.verbose {
-        state.print_verbose();
-    }
     while running {
         match state.state {
             RunningState::Ready => state.state = RunningState::Running,
             RunningState::Running => step(state),
-            RunningState::Step => step(state),
+            RunningState::Step => {
+                step(state);
+                running = false;
+            }
             RunningState::Haulted => running = false,
             _ => {}
         }

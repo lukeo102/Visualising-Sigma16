@@ -47,7 +47,7 @@ impl Assembler {
         let lexer = Tokens::lexer(&code);
 
         for token in lexer {
-            log!(Level::Info, "{token:?}");
+            //log!(Level::Info, "{token:?}");
             match token {
                 Ok(token) => {
                     let valid_token = self.validate_token(token.clone());

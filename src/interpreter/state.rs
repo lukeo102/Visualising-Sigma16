@@ -1,9 +1,11 @@
+use crate::interpreter::interpreter::run;
 use crate::interpreter::memory::Memory;
 use crate::interpreter::register::Register;
+use log::{log, Level};
 use std::collections::HashMap;
 use std::fmt::Display;
 
-#[cfg_attr(target_arch = "wasm32", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum RunningState {
     Init,
     Ready,
@@ -30,7 +32,7 @@ impl Display for RunningState {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct State {
     pub pc: Register,
     pub ir: Register,
@@ -60,6 +62,10 @@ impl State {
         };
         state.r[0].set_r0();
         state
+    }
+
+    pub fn run(&mut self) {
+        run(self);
     }
 
     pub fn monitor_check(&mut self) {}
@@ -130,28 +136,41 @@ impl State {
 
     pub fn print_verbose(&mut self) {
         // Print altered registers
-
-        println!("Registers");
+        let mut log = String::new();
+        log.push_str("\nRegisters\n");
         if self.pc.get_altered() {
-            println!("  PC: {} | {:#06x}", self.pc.get(), self.pc.get());
+            log.push_str(&format!(
+                "  PC: {} | {:#06x}\n",
+                self.pc.get(),
+                self.pc.get()
+            ));
         }
         if self.ir.get_altered() {
-            println!("  IR: {} | {:#06x}", self.ir.get(), self.ir.get());
+            log.push_str(&format!(
+                "  IR: {} | {:#06x}\n",
+                self.ir.get(),
+                self.ir.get()
+            ));
         }
         for i in 0..16 {
             if self.r[i].get_altered() {
-                println!("  R{}: {} | {:#06x}", i, self.r[i].get(), self.r[i].get());
+                log.push_str(&format!(
+                    "  R{}: {} | {:#06x}\n",
+                    i,
+                    self.r[i].get(),
+                    self.r[i].get()
+                ));
             }
         }
 
         // Print altered memory
-        println!("\nMemory");
+        log.push_str("\nMemory\n");
         for i in self.memory.get_used() {
-            println!("  {:#06x} => {:#06x}", i, self.memory[*i]);
+            log.push_str(&format!("  {:#06x} => {:#06x}\n", i, self.memory[*i]));
         }
 
-        println!("Running state: {}", self.state);
-        println!("\n\n");
+        log.push_str(&format!("Running state: {}\n", self.state));
+        log!(Level::Info, "{log}");
     }
 }
 

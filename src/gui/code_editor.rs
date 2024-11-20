@@ -6,7 +6,15 @@ use egui::{Galley, Layout, Response, TextBuffer};
 use std::sync::Arc;
 use web_sys::js_sys::Function;
 
-pub fn code_editor_frame(ui: &mut egui::Ui, app: &mut VisualisingSigma16, ctx: &egui::Context) {
+pub fn code_editor_frame(
+    ui: &mut egui::Ui,
+    app: &mut VisualisingSigma16,
+    ctx: &egui::Context,
+    editable: bool,
+    line_number_layouter: Option<
+        &mut dyn for<'a, 'b> FnMut(&'a egui::Ui, &'b str, f32) -> Arc<Galley>,
+    >,
+) {
     //egui::panel::SidePanel::left("line_numbers").show_inside(ui, |ui| {
     //    CodeEditor::make_line_counter(&mut app.code_editor, ui);
     //});
@@ -15,8 +23,8 @@ pub fn code_editor_frame(ui: &mut egui::Ui, app: &mut VisualisingSigma16, ctx: &
     //});
 
     ui.horizontal(|ui| {
-        CodeEditor::make_line_counter(&mut app.code_editor, ui);
-        CodeEditor::make_editor(&mut app.code_editor, ui);
+        CodeEditor::make_line_counter(&mut app.code_editor, ui, line_number_layouter);
+        CodeEditor::make_editor(&mut app.code_editor, ui, editable);
     });
 }
 
@@ -35,7 +43,7 @@ impl Default for CodeEditor {
 }
 
 impl CodeEditor {
-    pub fn make_editor(&mut self, ui: &mut egui::Ui) -> Response {
+    pub fn make_editor(&mut self, ui: &mut egui::Ui, editable: bool) -> Response {
         let Self { code } = self;
         ui.add(
             egui::TextEdit::multiline(code)
@@ -45,12 +53,19 @@ impl CodeEditor {
                 .lock_focus(true)
                 .desired_width(f32::INFINITY)
                 .layouter(&mut |ui: &egui::Ui, string: &str, _wrap_width: f32| {
-                    CodeEditor::layouter(ui, string, _wrap_width)
-                }),
+                    CodeEditor::layouter(&ui, string, _wrap_width)
+                })
+                .interactive(editable),
         )
     }
 
-    pub fn make_line_counter(&mut self, ui: &mut egui::Ui) -> Response {
+    pub fn make_line_counter(
+        &mut self,
+        ui: &mut egui::Ui,
+        line_number_layouter: Option<
+            &mut dyn for<'a, 'b> FnMut(&'a egui::Ui, &'b str, f32) -> Arc<Galley>,
+        >,
+    ) -> Response {
         let Self { code } = self;
 
         let line_count = code.as_str().lines().count();
@@ -59,19 +74,22 @@ impl CodeEditor {
         for i in 1..line_count + 1 {
             line_numbers_builder.push(format!("{:>indent$}\n", i,));
         }
-        let line_numbers = line_numbers_builder.concat();
+        let _line_numbers = line_numbers_builder.concat();
+        let mut line_numbers = _line_numbers.as_str();
 
-        ui.add(
-            egui::TextEdit::multiline(&mut line_numbers.as_str())
-                .font(egui::TextStyle::Monospace)
-                .code_editor()
-                .desired_rows(10)
-                .desired_width(6.9 * indent as f32)
-                .lock_focus(false),
-        )
+        let mut lines = egui::TextEdit::multiline(&mut line_numbers)
+            .font(egui::TextStyle::Monospace)
+            .code_editor()
+            .desired_rows(10)
+            .desired_width(6.9 * indent as f32)
+            .lock_focus(false);
+        if let Some(line_number_layouter) = line_number_layouter {
+            lines = lines.layouter(line_number_layouter);
+        };
+        ui.add(lines)
     }
 
-    fn layouter(ui: &egui::Ui, string: &str, _wrap_width: f32) -> Arc<Galley> {
+    pub fn layouter(ui: &egui::Ui, string: &str, _wrap_width: f32) -> Arc<Galley> {
         let layout_job = highlight(ui.ctx(), &CodeTheme::default(), string, "Sigma16");
         // layout_job.wrap.max_width = wrap_width; // no wrapping
         ui.fonts(|font| font.layout_job(layout_job))

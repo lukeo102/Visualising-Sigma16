@@ -1,48 +1,52 @@
-//use crate::gui::app::VisualisingSigma16;
-//use crate::gui::code_editor::CodeEditor;
-//use crate::interpreter::state::State;
-//
-//struct CodeRunner {
-//    state: State,
-//
-//
-//}
-//
-//impl Default for CodeRunner {
-//    fn default() -> Self {
-//        Self {
-//            state: State::new(&[0_u16]),
-//        }
-//    }
-//}
-//
-//impl CodeRunner {
-//    pub fn gui(ui: &mut egui::Ui, app: &mut VisualisingSigma16) -> egui::Frame {
-//        let root = egui::Frame::default();
-//
-//        root.show(ui, |ui| {
-//            let step_button = egui::Button::new("Step");
-//
-//
-//            let mut layouter = |ui: &egui::Ui, string: &str, _wrap_width: f32| {
-//                let layout_job = highlight(ui.ctx(), &theme, string, language);
-//                // layout_job.wrap.max_width = wrap_width; // no wrapping
-//                ui.fonts(|font| { font.layout_job(layout_job) })
-//            };
-//
-//            egui::TextEdit::multiline(&mut app.code_editor.code)
-//                .font(egui::TextStyle::Monospace) // for cursor height
-//                .code_editor()
-//                .desired_rows(10)
-//                .lock_focus(true)
-//                .desired_width(f32::INFINITY)
-//                .layouter(&mut layouter)
-//
-//
-//
-//        });
-//
-//        root
-//
-//    }
-//}
+use crate::assembler::code::Code;
+use crate::gui::app::VisualisingSigma16;
+use crate::gui::code_editor::CodeEditor;
+use crate::interpreter::state::{RunningState, State};
+
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(default)] // if we add new fields, give them default values when deserializing old state
+pub struct CodeRunner {
+    state: State,
+}
+
+impl Default for CodeRunner {
+    fn default() -> Self {
+        Self {
+            state: State::new(&[0_u16]),
+        }
+    }
+}
+
+impl CodeRunner {
+    pub fn gui(&mut self, ui: &mut egui::Ui, code_editor: &mut CodeEditor) {
+        ui.vertical(|ui| {
+            ui.horizontal(|ui| {
+                let reset = ui.add(egui::Button::new("Reset"));
+                let step = ui.add(egui::Button::new("Step"));
+                ui.add(egui::Label::new("Log to console:"));
+                ui.add(egui::Checkbox::new(&mut self.state.verbose, ""));
+
+                if reset.clicked() {
+                    self.reset(code_editor);
+                }
+
+                if step.clicked() {
+                    self.step();
+                }
+            });
+            ui.horizontal(|ui| {
+                code_editor.make_line_counter(ui, None);
+                code_editor.make_editor(ui, false);
+            })
+        });
+    }
+
+    fn reset(&mut self, code_editor: &CodeEditor) {
+        self.state = State::new(&Code::new(code_editor.code.clone()).memory);
+        self.state.state = RunningState::Step;
+    }
+
+    fn step(&mut self) {
+        self.state.run();
+    }
+}

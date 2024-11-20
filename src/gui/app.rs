@@ -1,6 +1,8 @@
 use crate::assembler::code::Code;
 use crate::gui::code_editor::{code_editor_frame, CodeEditor};
+use crate::gui::code_runner::CodeRunner;
 use eframe::epaint::text::LayoutJob;
+use egui::TextBuffer;
 use log::{log, Level};
 
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -8,7 +10,7 @@ use log::{log, Level};
 pub struct VisualisingSigma16 {
     show_code_editor: bool,
     pub code_editor: CodeEditor,
-    pub code_hex: CodeEditor,
+    pub code_runner: CodeRunner,
 }
 
 impl Default for VisualisingSigma16 {
@@ -16,7 +18,7 @@ impl Default for VisualisingSigma16 {
         Self {
             show_code_editor: true,
             code_editor: CodeEditor::default(),
-            code_hex: CodeEditor::default(),
+            code_runner: CodeRunner::default(),
         }
     }
 }
@@ -26,7 +28,6 @@ impl VisualisingSigma16 {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
-
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
         if let Some(storage) = cc.storage {
@@ -50,25 +51,22 @@ impl eframe::App for VisualisingSigma16 {
         if !self.code_editor.code.ends_with("\n") {
             self.code_editor.code.push('\n');
         }
-        //self.code_editor.code.replace('\t', "    ");
+        self.code_editor.code = self.code_editor.code.replace("\t", "    ");
 
         egui::Window::new("Code Editor")
             .resizable([true, true])
             .show(ctx, |ui| {
-                code_editor_frame(ui, self, ctx);
+                code_editor_frame(ui, self, ctx, true, None);
+            });
+
+        egui::Window::new("Code Runner")
+            .resizable([true, true])
+            .show(ctx, |ui| {
+                CodeRunner::gui(&mut self.code_runner, ui, &mut self.code_editor);
             });
 
         let code = Code::new(self.code_editor.code.clone());
         let mem_loc_count = code.get_memory_location_count();
-        log!(Level::Info, "{}", code.get_code());
-        for i in 0..mem_loc_count {
-            log!(
-                Level::Info,
-                "{:#04}: {}",
-                i,
-                code.code_line_from_mem_loc(i).0
-            );
-        }
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
