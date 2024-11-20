@@ -1,7 +1,7 @@
-use eframe::epaint::text::LayoutJob;
-use log::{log, Level};
 use crate::assembler::code::Code;
 use crate::gui::code_editor::{code_editor_frame, CodeEditor};
+use eframe::epaint::text::LayoutJob;
+use log::{log, Level};
 
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -14,7 +14,6 @@ pub struct VisualisingSigma16 {
 impl Default for VisualisingSigma16 {
     fn default() -> Self {
         Self {
-            
             show_code_editor: true,
             code_editor: CodeEditor::default(),
             code_hex: CodeEditor::default(),
@@ -48,18 +47,27 @@ impl eframe::App for VisualisingSigma16 {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
 
+        if !self.code_editor.code.ends_with("\n") {
+            self.code_editor.code.push('\n');
+        }
+        //self.code_editor.code.replace('\t', "    ");
+
         egui::Window::new("Code Editor")
             .resizable([true, true])
             .show(ctx, |ui| {
-            code_editor_frame(ui, self, ctx);
-
-        });
+                code_editor_frame(ui, self, ctx);
+            });
 
         let code = Code::new(self.code_editor.code.clone());
         let mem_loc_count = code.get_memory_location_count();
         log!(Level::Info, "{}", code.get_code());
         for i in 0..mem_loc_count {
-            log!(Level::Info, "{:#04}: {}", i, code.code_line_from_mem_loc(i).0);
+            log!(
+                Level::Info,
+                "{:#04}: {}",
+                i,
+                code.code_line_from_mem_loc(i).0
+            );
         }
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -74,7 +82,6 @@ impl eframe::App for VisualisingSigma16 {
             });
 
             ui.separator();
-
         });
     }
 }

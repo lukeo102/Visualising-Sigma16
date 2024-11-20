@@ -13,6 +13,7 @@ pub fn code_editor_frame(ui: &mut egui::Ui, app: &mut VisualisingSigma16, ctx: &
     //egui::panel::SidePanel::right("code").show_inside(ui, |ui| {
     //    CodeEditor::make_editor(&mut app.code_editor, ui);
     //});
+
     ui.horizontal(|ui| {
         CodeEditor::make_line_counter(&mut app.code_editor, ui);
         CodeEditor::make_editor(&mut app.code_editor, ui);
@@ -54,12 +55,9 @@ impl CodeEditor {
 
         let line_count = code.as_str().lines().count();
         let mut line_numbers_builder: Vec<String> = Vec::with_capacity(line_count);
+        let indent = line_count.to_string().len() + 1;
         for i in 1..line_count + 1 {
-            line_numbers_builder.push(format!(
-                "{:>indent$}\n",
-                i,
-                indent = (line_count / 100) + 2.0 as usize
-            ));
+            line_numbers_builder.push(format!("{:>indent$}\n", i,));
         }
         let line_numbers = line_numbers_builder.concat();
 
@@ -68,7 +66,7 @@ impl CodeEditor {
                 .font(egui::TextStyle::Monospace)
                 .code_editor()
                 .desired_rows(10)
-                .desired_width(15.0)
+                .desired_width(6.9 * indent as f32)
                 .lock_focus(false),
         )
     }
