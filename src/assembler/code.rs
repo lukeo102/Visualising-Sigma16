@@ -12,7 +12,7 @@ pub(crate) struct Code {
 impl Code {
     pub fn new(code: String) -> Code {
         let mut errors = false;
-        let mut assembler = Assembler::new(code.clone());
+        let mut assembler = Assembler::new(code);
         assembler.assemble();
 
         if !assembler.errors.is_empty() {
@@ -36,7 +36,7 @@ impl Code {
 
     pub fn code_line_from_mem_loc(&self, mem_loc: usize) -> (String, usize) {
         let lines = self.code.lines().collect::<Vec<&str>>();
-        let line = self.memory_to_code[&mem_loc];
+        let line = self.memory_to_code[&mem_loc] - 1;
         (lines[line].to_string(), line)
     }
 

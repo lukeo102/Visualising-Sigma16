@@ -7,16 +7,16 @@ use std::sync::Arc;
 use web_sys::js_sys::Function;
 
 pub fn code_editor_frame(ui: &mut egui::Ui, app: &mut VisualisingSigma16, ctx: &egui::Context) {
-    let frame = egui::frame::Frame::default()
-        .fill(egui::Color32::BLACK)
-        .show(ui, |frame_ui| {
-            let mut layout = Layout::default();
-            layout.horizontal_align();
-            frame_ui.with_layout(layout, |frame_ui| {
-                CodeEditor::make_line_counter(&mut app.code_editor, frame_ui);
-                CodeEditor::make_editor(&mut app.code_editor, frame_ui)
-            })
-        });
+    //egui::panel::SidePanel::left("line_numbers").show_inside(ui, |ui| {
+    //    CodeEditor::make_line_counter(&mut app.code_editor, ui);
+    //});
+    //egui::panel::SidePanel::right("code").show_inside(ui, |ui| {
+    //    CodeEditor::make_editor(&mut app.code_editor, ui);
+    //});
+    ui.horizontal(|ui| {
+        CodeEditor::make_line_counter(&mut app.code_editor, ui);
+        CodeEditor::make_editor(&mut app.code_editor, ui);
+    });
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -54,8 +54,12 @@ impl CodeEditor {
 
         let line_count = code.as_str().lines().count();
         let mut line_numbers_builder: Vec<String> = Vec::with_capacity(line_count);
-        for i in 0..line_count {
-            line_numbers_builder.push(format!("{}\n", i));
+        for i in 1..line_count + 1 {
+            line_numbers_builder.push(format!(
+                "{:>indent$}\n",
+                i,
+                indent = (line_count / 100) + 2.0 as usize
+            ));
         }
         let line_numbers = line_numbers_builder.concat();
 
@@ -64,7 +68,7 @@ impl CodeEditor {
                 .font(egui::TextStyle::Monospace)
                 .code_editor()
                 .desired_rows(10)
-                .desired_width(3.0)
+                .desired_width(15.0)
                 .lock_focus(false),
         )
     }

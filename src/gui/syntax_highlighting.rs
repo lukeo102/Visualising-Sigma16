@@ -1,5 +1,6 @@
 use egui::text::LayoutJob;
-use serde::Serializer;
+use log::{log, Level};
+use regex::Regex;
 
 pub fn highlight(ctx: &egui::Context, theme: &CodeTheme, code: &str, language: &str) -> LayoutJob {
     impl egui::util::cache::ComputerMut<(&CodeTheme, &str, &str), LayoutJob> for Highlighter {
@@ -18,7 +19,6 @@ pub fn highlight(ctx: &egui::Context, theme: &CodeTheme, code: &str, language: &
             .get((theme, code, language))
     })
 }
-
 
 #[derive(Clone, Copy, PartialEq)]
 // #[derive(serde::Deserialize, serde::Serialize)]
@@ -39,7 +39,6 @@ pub struct CodeTheme {
     formats: enum_map::EnumMap<TokenType, egui::TextFormat>,
 }
 
-
 impl Default for CodeTheme {
     fn default() -> Self {
         let font_id = egui::FontId::monospace(12.0);
@@ -53,10 +52,9 @@ impl Default for CodeTheme {
                 TokenType::Punctuation => TextFormat::simple(font_id.clone(), Color32::DARK_GRAY),
                 TokenType::Whitespace => TextFormat::simple(font_id.clone(), Color32::TRANSPARENT),
             ],
-        }    
+        }
     }
 }
-
 
 #[derive(Default)]
 struct Highlighter {}
@@ -67,21 +65,32 @@ impl Highlighter {
         // Extremely simple syntax highlighter for when we compile without syntect
 
         let mut job = LayoutJob::default();
+        let re = Regex::new(r"$[a-fA-F0-9]{0,4}").unwrap();
 
         while !text.is_empty() {
             // =======
             // Comment
             // =======
-            if text.starts_with("--") {
+            if text.starts_with(";") {
                 let end = text.find('\n').unwrap_or(text.len());
                 job.append(&text[..end], 0.0, theme.formats[TokenType::Comment].clone());
                 text = &text[end..];
             } else if text.starts_with('$') {
-                let end = text[6..]
-                    .rfind(r"![0-9a-fA-F]")
-                    .map(|i| i + 2)
-                    .or_else(|| text.find('['))
-                    .unwrap_or(text.len());
+                let mut end = 1;
+                let l = if text.len() >= 5 { 5 } else { text.len() };
+
+                for i in 1..l {
+                    end = if text[i..i + 1]
+                        .find(|c| "abcdefABCDEF1234567890".contains(c))
+                        .unwrap_or_else(|| 1)
+                        != 0
+                    {
+                        break;
+                    } else {
+                        i + 1
+                    }
+                }
+
                 job.append(
                     &text[..end],
                     0.0,
@@ -111,7 +120,7 @@ impl Highlighter {
                 );
                 text = &text[end..];
             } else {
-            let mut it = text.char_indices();
+                let mut it = text.char_indices();
                 it.next();
                 let end = it.next().map_or(text.len(), |(idx, _chr)| idx);
                 job.append(
@@ -131,7 +140,7 @@ fn is_keyword(word: &str) -> bool {
     matches!(
         word,
         // RRR Instructions
-          "add"
+        "add"
         | "sub"
         | "mul"
         | "muln"
