@@ -1,3 +1,4 @@
+use crate::assembler::code::Code;
 use crate::interpreter::interpreter::run;
 use crate::interpreter::memory::Memory;
 use crate::interpreter::register::Register;
@@ -40,25 +41,31 @@ pub struct State {
     pub memory: Memory,
     pub state: RunningState,
     pub verbose: bool,
-    symbol_table: HashMap<String, u16>,
-    monitored_symbols: Vec<String>,
-    monitored_addresses: Vec<u16>,
-    monitored_registers: Vec<usize>,
+    pub symbol_table: HashMap<String, usize>,
+    pub monitored_symbols: Vec<(String, bool)>,
+    pub monitored_addresses: Vec<u16>,
+    pub monitored_registers: [bool; 16],
 }
 
 impl State {
-    pub fn new(memory: &[u16]) -> State {
+    pub fn new(code: &Code) -> State {
         let mut state = State {
             pc: (Register::new()),
             ir: (Register::new()),
             r: [Register::new(); 16],
-            memory: (Memory::new(Option::from(memory))),
+            memory: (Memory::new(Option::from(code.memory.as_slice()))),
             state: RunningState::Init,
             verbose: false,
-            symbol_table: HashMap::new(),
-            monitored_symbols: Vec::new(),
+            symbol_table: code.symbol_table.clone(),
+            monitored_symbols: {
+                let mut symbols = Vec::new();
+                for key in code.symbol_table.keys() {
+                    symbols.push((key.clone(), false));
+                }
+                symbols
+            },
             monitored_addresses: Vec::new(),
-            monitored_registers: Vec::new(),
+            monitored_registers: [false; 16],
         };
         state.r[0].set_r0();
         state
@@ -66,72 +73,6 @@ impl State {
 
     pub fn run(&mut self) {
         run(self);
-    }
-
-    pub fn monitor_check(&mut self) {}
-
-    pub fn monitor_enable(&mut self, element: MonitorType) -> Option<MonitorType> {
-        match element {
-            MonitorType::Address(item) => {
-                if self.monitored_addresses.contains(&item) {
-                    None
-                } else {
-                    self.monitored_addresses.push(item.clone());
-                    Some(element)
-                }
-            }
-            MonitorType::Symbol(item) => {
-                if self.monitored_symbols.contains(&item) {
-                    None
-                } else {
-                    self.monitored_symbols.push(item.clone());
-                    Some(MonitorType::Symbol(item))
-                }
-            }
-            MonitorType::Register(item) => {
-                if self.monitored_registers.contains(&item) {
-                    None
-                } else {
-                    self.monitored_registers.push(item.clone());
-                    Some(element)
-                }
-            }
-        }
-    }
-
-    pub fn monitor_disable(&mut self, element: MonitorType) -> Option<MonitorType> {
-        match element {
-            MonitorType::Address(item) => {
-                let idx = self.monitored_addresses.iter().position(|x| *x == item);
-                match idx {
-                    Some(i) => {
-                        self.monitored_addresses.remove(i);
-                        Some(element)
-                    }
-                    None => None,
-                }
-            }
-            MonitorType::Symbol(item) => {
-                let idx = self.monitored_symbols.iter().position(|x| *x == item);
-                match idx {
-                    Some(i) => {
-                        self.monitored_symbols.remove(i);
-                        Some(MonitorType::Symbol(item))
-                    }
-                    None => None,
-                }
-            }
-            MonitorType::Register(item) => {
-                let idx = self.monitored_registers.iter().position(|x| *x == item);
-                match idx {
-                    Some(i) => {
-                        self.monitored_registers.remove(i);
-                        Some(element)
-                    }
-                    None => None,
-                }
-            }
-        }
     }
 
     pub fn print_verbose(&mut self) {

@@ -60,8 +60,15 @@ impl Default for CodeTheme {
 struct Highlighter {}
 
 impl Highlighter {
+    fn highlight(&self, theme: &CodeTheme, code: &str, language: &str) -> LayoutJob {
+        match language {
+            "sigma16" => self.sigma16_highlight(theme, code, language),
+            _ => self.sigma16_highlight(theme, code, language),
+        }
+    }
+
     #[allow(clippy::unused_self, clippy::unnecessary_wraps)]
-    fn highlight(&self, theme: &CodeTheme, mut text: &str, _language: &str) -> LayoutJob {
+    fn sigma16_highlight(&self, theme: &CodeTheme, mut text: &str, _language: &str) -> LayoutJob {
         // Extremely simple syntax highlighter for when we compile without syntect
 
         let mut job = LayoutJob::default();

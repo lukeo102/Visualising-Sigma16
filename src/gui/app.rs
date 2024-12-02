@@ -1,6 +1,8 @@
 use crate::assembler::code::Code;
 use crate::gui::code_editor::{code_editor_frame, CodeEditor};
 use crate::gui::code_runner::CodeRunner;
+use crate::gui::monitor::make_monitor_toggles;
+use crate::interpreter::state::State;
 use eframe::epaint::text::LayoutJob;
 use egui::TextBuffer;
 use log::{log, Level};
@@ -52,6 +54,10 @@ impl eframe::App for VisualisingSigma16 {
             self.code_editor.code.push('\n');
         }
         self.code_editor.code = self.code_editor.code.replace("\t", "    ");
+
+        egui::Window::new("Monitor Toggles").show(ctx, |ui| {
+            make_monitor_toggles(ui, &mut self.code_runner.state);
+        });
 
         egui::Window::new("Code Editor")
             .resizable([true, true])
