@@ -3,6 +3,7 @@ use crate::interpreter::{
     opcodes::{next_op, OpCodes},
     state::{RunningState, State},
 };
+use log::{log, Level};
 
 const TC_MASK: u16 = 0b1000_0000_0000_0000;
 pub(crate) const R15_g: u16 = 0b1;
@@ -21,6 +22,10 @@ pub fn run(state: &mut State) {
     let mut running = true;
     while running {
         match state.state {
+            RunningState::Init => {
+                log!(Level::Warn, "Trying to run program when in init state");
+                running = false;
+            }
             RunningState::Ready => state.state = RunningState::Running,
             RunningState::Running => step(state),
             RunningState::Step => {
@@ -28,7 +33,10 @@ pub fn run(state: &mut State) {
                 running = false;
             }
             RunningState::Haulted => running = false,
-            _ => {}
+            _ => {
+                log!(Level::Warn, "Unknown Sigma16 interpreter state");
+                running = false;
+            }
         }
         if state.verbose {
             state.print_verbose();

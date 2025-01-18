@@ -6,7 +6,7 @@ use log::{log, Level};
 use std::collections::HashMap;
 use std::fmt::Display;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, PartialEq, Debug, Clone)]
 pub enum RunningState {
     Init,
     Ready,
@@ -71,6 +71,40 @@ impl State {
         state
     }
 
+    pub fn monitored_accessed(mut self) -> Vec<MonitorType> {
+        let mut monitored: Vec<MonitorType> = Vec::new();
+        for (reg, monitor) in self.monitored_registers.iter().enumerate() {
+            if *monitor {
+                if self.r[reg].get_altered() {
+                    monitored.push(MonitorType::Register(reg));
+                }
+            }
+        }
+
+        for (addr, monitor) in self.monitored_registers.iter().enumerate() {
+            if *monitor {
+                if self.memory.get_altered_i().contains(&addr) {
+                    monitored.push(MonitorType::Address(addr));
+                }
+            }
+        }
+
+        for (symbol, monitor) in self.monitored_symbols {
+            if monitor {
+                if self
+                    .memory
+                    .get_altered_i()
+                    .contains(self.symbol_table.get(&symbol).unwrap())
+                {
+                    monitored.push(MonitorType::Symbol(symbol));
+                }
+            }
+        }
+        monitored
+    }
+
+    pub fn reset_altered(mut self) {}
+
     pub fn run(&mut self) {
         run(self);
     }
@@ -116,7 +150,7 @@ impl State {
 }
 
 pub enum MonitorType {
-    Address(u16),
+    Address(usize),
     Symbol(String),
     Register(usize),
 }

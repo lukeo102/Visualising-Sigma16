@@ -61,7 +61,9 @@ impl Assembler {
                         }
                     }
                 }
-                Err(e) => log!(Level::Warn, "uhh ohh {e:?}"),
+                Err(e) => {
+                    log!(Level::Warn, "uhh ohh {e:?}");
+                }
             };
         }
 
