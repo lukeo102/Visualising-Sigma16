@@ -28,11 +28,15 @@ impl CodeRunner {
                 let reset = h_ui.add(egui::Button::new("Reset"));
 
                 // If we are haulted, we should not be able to step
-                if selected == RunningState::Haulted {
-                } else {
-                    let step = h_ui.add(egui::Button::new("Step"));
+                if selected == RunningState::Running || selected == RunningState::Step {
+                    let run_text = if selected == RunningState::Step {
+                        "Step"
+                    } else {
+                        "Run"
+                    };
+                    let run = h_ui.add(egui::Button::new(run_text));
 
-                    if step.clicked() {
+                    if run.clicked() {
                         self.step();
                     }
                 }
