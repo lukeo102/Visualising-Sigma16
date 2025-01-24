@@ -1,6 +1,7 @@
 use crate::assembler::code::Code;
 use crate::gui::app::VisualisingSigma16;
 use crate::gui::code_editor::CodeEditor;
+use crate::interpreter::history::History;
 use crate::interpreter::state::{RunningState, State};
 use log::{log, Level};
 
@@ -8,12 +9,15 @@ use log::{log, Level};
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct CodeRunner {
     pub state: State,
+    history: Option<History>,
 }
 
 impl Default for CodeRunner {
     fn default() -> Self {
         let state = State::new(&Code::new("".to_string()));
-        Self { state }
+        let history = None;
+
+        Self { state, history }
     }
 }
 
@@ -35,6 +39,12 @@ impl CodeRunner {
                         "Run"
                     };
                     let run = h_ui.add(egui::Button::new(run_text));
+                    if selected == RunningState::Step {
+                        let step_back = h_ui.add(egui::Button::new("Step Back"));
+                        if step_back.clicked() {
+                            self.step_back();
+                        }
+                    }
 
                     if run.clicked() {
                         self.step();
@@ -80,5 +90,14 @@ impl CodeRunner {
 
     fn step(&mut self) {
         self.state.run();
+    }
+
+    fn step_back(&mut self) {
+        match self.history.clone() {
+            None => {}
+            Some(history) => {
+                self.history = Some(History::apply(history, &mut self.state));
+            }
+        }
     }
 }
