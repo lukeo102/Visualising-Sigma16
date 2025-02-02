@@ -2,12 +2,11 @@ use crate::assembler::code::Code;
 //use crate::interpreter::interpreter::run;
 use crate::interpreter::memory::Memory;
 use crate::interpreter::register::Register;
-use diff::Diff;
 use log::{log, Level};
 use std::collections::HashMap;
 use std::fmt::Display;
 
-#[derive(serde::Serialize, serde::Deserialize, PartialEq, Debug, Clone, Diff)]
+#[derive(serde::Serialize, serde::Deserialize, PartialEq, Debug, Clone, serde_diff::SerdeDiff)]
 pub enum RunningState {
     Init,
     Ready,
@@ -34,7 +33,7 @@ impl Display for RunningState {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Diff)]
+#[derive(serde::Serialize, serde::Deserialize, serde_diff::SerdeDiff, Clone)]
 pub struct State {
     pub pc: Register,
     pub ir: Register,

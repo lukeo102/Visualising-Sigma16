@@ -5,18 +5,20 @@ use crate::interpreter::history::History;
 use crate::interpreter::interpreter;
 use crate::interpreter::state::{RunningState, State};
 use log::{log, Level};
+use serde_diff::{Apply, Diff};
+use std::collections::VecDeque;
 
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct CodeRunner {
     pub state: State,
-    history: Option<History>,
+    pub history: VecDeque<String>,
 }
 
 impl Default for CodeRunner {
     fn default() -> Self {
         let state = State::new(&Code::new("".to_string()));
-        let history = None;
+        let history = VecDeque::new();
 
         Self { state, history }
     }
@@ -47,12 +49,13 @@ impl CodeRunner {
                         }
                     }
 
-                    if run.clicked() {
+                    if run.clicked() || self.state.state == RunningState::Running {
                         self.step();
                     }
                 }
                 h_ui.add(egui::Label::new("Log to console:"));
                 h_ui.add(egui::Checkbox::new(&mut self.state.verbose, ""));
+                self.state.verbose = true;
 
                 if reset.clicked() {
                     self.reset(code_editor);
@@ -87,44 +90,60 @@ impl CodeRunner {
 
     fn reset(&mut self, code_editor: &CodeEditor) {
         self.state = State::new(&Code::new(code_editor.code.clone()));
+        self.state.state = RunningState::Step;
+        self.history = VecDeque::new();
     }
 
     fn step(&mut self) {
-        loop {
-            match self.state.state {
-                RunningState::Init => {
-                    log!(Level::Warn, "Trying to run program when in init state");
-                }
-                RunningState::Ready => self.state.state = RunningState::Running,
-                RunningState::Running => {
-                    // x = &mut History
-                    // x.property.insert()
+        let base = self.state.clone();
 
-                    self.history = interpreter::step(&mut self.state, &mut self.history);
-                }
-                RunningState::Step => {
-                    self.history = interpreter::step(&mut self.state, &mut self.history);
-                }
-                RunningState::Haulted => {}
-                _ => {
-                    log!(Level::Warn, "Unknown Sigma16 interpreter state");
-                }
+        match self.state.state {
+            RunningState::Init => {
+                log!(Level::Warn, "Trying to run program when in init state");
             }
-            if self.state.verbose {
-                self.state.print_verbose();
+            RunningState::Ready => self.state.state = RunningState::Running,
+            RunningState::Running | RunningState::Step => interpreter::step(&mut self.state),
+            _ => {
+                log!(Level::Warn, "Unknown Sigma16 interpreter state");
             }
-            if self.state.state != RunningState::Running {
-                break;
+        }
+
+        self.diff(base);
+
+        self.state.print_verbose();
+    }
+
+    fn diff(&mut self, old: State) {
+        let diff = serde_json::to_string(&Diff::serializable(&self.state, &old));
+        match diff {
+            Ok(diff) => {
+                self.history.push_back(diff);
+            }
+            Err(error) => {
+                log!(
+                    Level::Error,
+                    "Couldnt generate diff for state history.\n{:?}",
+                    error,
+                );
             }
         }
     }
 
     fn step_back(&mut self) {
-        match self.history.clone() {
-            None => {}
-            Some(history) => {
-                self.history = Some(History::apply(history, &mut self.state));
+        if self.history.len() < 1 {
+            log!(Level::Warn, "No more history to step back into.");
+            return;
+        }
+
+        let diff = self.history.pop_back().unwrap();
+        let mut deserializer = serde_json::Deserializer::from_str(&diff);
+
+        match Apply::apply(&mut deserializer, &mut self.state) {
+            Ok(_) => {}
+            Err(e) => {
+                log!(Level::Error, "Could not step back.\n{:?}", e)
             }
         }
+        self.state.print_verbose();
     }
 }

@@ -3,6 +3,7 @@ use crate::interpreter::memory::{word_to_nibbles, Memory};
 use crate::interpreter::register::Register;
 use std::error::Error;
 
+#[derive(Debug, Clone)]
 pub enum OpCodes {
     // RRR instructions
     Add(u8, u8, u8),
