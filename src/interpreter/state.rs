@@ -1,12 +1,13 @@
 use crate::assembler::code::Code;
-use crate::interpreter::interpreter::run;
+//use crate::interpreter::interpreter::run;
 use crate::interpreter::memory::Memory;
 use crate::interpreter::register::Register;
+use diff::Diff;
 use log::{log, Level};
 use std::collections::HashMap;
 use std::fmt::Display;
 
-#[derive(serde::Serialize, serde::Deserialize, PartialEq, Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, PartialEq, Debug, Clone, Diff)]
 pub enum RunningState {
     Init,
     Ready,
@@ -33,7 +34,7 @@ impl Display for RunningState {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Diff)]
 pub struct State {
     pub pc: Register,
     pub ir: Register,
@@ -105,9 +106,9 @@ impl State {
 
     pub fn reset_altered(mut self) {}
 
-    pub fn run(&mut self) {
-        run(self);
-    }
+    //pub fn run(&mut self) {
+    //    run(self);
+    //}
 
     pub fn print_verbose(&mut self) {
         // Print altered registers

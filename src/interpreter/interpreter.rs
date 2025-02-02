@@ -1,5 +1,6 @@
 #![allow(non_upper_case_globals)]
 use crate::interpreter::{
+    history::History,
     opcodes::{next_op, OpCodes},
     state::{RunningState, State},
 };
@@ -18,35 +19,37 @@ const R15_S: u16 = 0b1_0000_0000;
 const R15_s: u16 = 0b10_0000_0000;
 const R15_f: u16 = 0b100_0000_0000;
 
-pub fn run(state: &mut State) {
-    let mut running = true;
-    while running {
-        match state.state {
-            RunningState::Init => {
-                log!(Level::Warn, "Trying to run program when in init state");
-                running = false;
-            }
-            RunningState::Ready => state.state = RunningState::Running,
-            RunningState::Running => step(state),
-            RunningState::Step => {
-                step(state);
-                running = false;
-            }
-            RunningState::Haulted => running = false,
-            _ => {
-                log!(Level::Warn, "Unknown Sigma16 interpreter state");
-                running = false;
-            }
-        }
-        if state.verbose {
-            state.print_verbose();
-        }
-    }
-}
+//pub fn run(state: &mut State) {
+//    let mut running = true;
+//    while running {
+//        match state.state {
+//            RunningState::Init => {
+//                log!(Level::Warn, "Trying to run program when in init state");
+//                running = false;
+//            }
+//            RunningState::Ready => state.state = RunningState::Running,
+//            RunningState::Running => step(state),
+//            RunningState::Step => {
+//                step(state);
+//                running = false;
+//            }
+//            RunningState::Haulted => running = false,
+//            _ => {
+//                log!(Level::Warn, "Unknown Sigma16 interpreter state");
+//                running = false;
+//            }
+//        }
+//        if state.verbose {
+//            state.print_verbose();
+//        }
+//    }
+//}
 
-fn step(state: &mut State) {
+pub fn step(state: &mut State, history: &mut Option<History>) -> Option<History> {
+    let new_history = History::new(history, state);
     let opcode = next_op(&state.memory, &mut state.pc, state.verbose);
     execute(opcode.unwrap(), state);
+    Some(new_history)
 }
 
 fn execute(opcode: OpCodes, state: &mut State) {

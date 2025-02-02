@@ -1,6 +1,8 @@
+use diff::Diff;
+
 pub const U16_MAX: u16 = 65535;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Diff)]
 pub struct Memory {
     contents: Vec<u16>,
     accessed_i: Vec<usize>,

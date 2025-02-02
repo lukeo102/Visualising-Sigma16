@@ -2,6 +2,7 @@ use crate::assembler::code::Code;
 use crate::gui::app::VisualisingSigma16;
 use crate::gui::code_editor::CodeEditor;
 use crate::interpreter::history::History;
+use crate::interpreter::interpreter;
 use crate::interpreter::state::{RunningState, State};
 use log::{log, Level};
 
@@ -89,7 +90,33 @@ impl CodeRunner {
     }
 
     fn step(&mut self) {
-        self.state.run();
+        loop {
+            match self.state.state {
+                RunningState::Init => {
+                    log!(Level::Warn, "Trying to run program when in init state");
+                }
+                RunningState::Ready => self.state.state = RunningState::Running,
+                RunningState::Running => {
+                    // x = &mut History
+                    // x.property.insert()
+
+                    self.history = interpreter::step(&mut self.state, &mut self.history);
+                }
+                RunningState::Step => {
+                    self.history = interpreter::step(&mut self.state, &mut self.history);
+                }
+                RunningState::Haulted => {}
+                _ => {
+                    log!(Level::Warn, "Unknown Sigma16 interpreter state");
+                }
+            }
+            if self.state.verbose {
+                self.state.print_verbose();
+            }
+            if self.state.state != RunningState::Running {
+                break;
+            }
+        }
     }
 
     fn step_back(&mut self) {

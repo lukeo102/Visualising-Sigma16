@@ -1,3 +1,4 @@
+use log::{log, Level};
 use std::collections::HashMap;
 
 use crate::state::{RunningState, State};
@@ -43,7 +44,7 @@ impl History {
         for i in altered_memory {
             memory_map.insert(*i, current.memory[*i].clone());
         }
-
+        log!(Level::Info, "{:#?}", memory_map);
         memory_map
     }
 
@@ -56,6 +57,7 @@ impl History {
                 register_map.insert(i, current_registers[i].get());
             }
         }
+        log!(Level::Info, "{:#?}", register_map);
         register_map
     }
 

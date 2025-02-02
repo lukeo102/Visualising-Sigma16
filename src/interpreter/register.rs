@@ -1,7 +1,8 @@
 use crate::interpreter::memory::U16_MAX;
+use diff::Diff;
 use std::ops::{Add, Div, Mul, Rem, Sub};
 
-#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Copy, Clone, serde::Serialize, serde::Deserialize, Diff, Eq, PartialEq)]
 pub struct Register {
     value: u16,
     altered: bool,
