@@ -1,7 +1,5 @@
 use crate::assembler::code::Code;
-use crate::gui::app::VisualisingSigma16;
 use crate::gui::code_editor::CodeEditor;
-use crate::interpreter::history::History;
 use crate::interpreter::interpreter;
 use crate::interpreter::state::{RunningState, State};
 use log::{log, Level};
@@ -13,6 +11,7 @@ use std::collections::VecDeque;
 pub struct CodeRunner {
     pub state: State,
     pub history: VecDeque<String>,
+    pub running: bool,
 }
 
 impl Default for CodeRunner {
@@ -20,7 +19,11 @@ impl Default for CodeRunner {
         let state = State::new(&Code::new("".to_string()));
         let history = VecDeque::new();
 
-        Self { state, history }
+        Self {
+            state,
+            history,
+            running: false,
+        }
     }
 }
 
@@ -35,27 +38,32 @@ impl CodeRunner {
                 let reset = h_ui.add(egui::Button::new("Reset"));
 
                 // If we are haulted, we should not be able to step
-                if selected == RunningState::Running || selected == RunningState::Step {
-                    let run_text = if selected == RunningState::Step {
-                        "Step"
-                    } else {
-                        "Run"
-                    };
-                    let run = h_ui.add(egui::Button::new(run_text));
-                    if selected == RunningState::Step {
-                        let step_back = h_ui.add(egui::Button::new("Step Back"));
-                        if step_back.clicked() {
-                            self.step_back();
-                        }
+                if selected == RunningState::Step {
+                    let step = h_ui.add_enabled(!self.running, egui::Button::new("Step"));
+
+                    if step.clicked() {
+                        self.step()
+                    }
+                }
+                if selected == RunningState::Running {
+                    let run = h_ui.add_enabled(!self.running, egui::Button::new("Run"));
+
+                    if run.clicked() {
+                        self.running = true;
                     }
 
-                    if run.clicked() || self.state.state == RunningState::Running {
+                    if self.running {
                         self.step();
                     }
                 }
-                h_ui.add(egui::Label::new("Log to console:"));
-                h_ui.add(egui::Checkbox::new(&mut self.state.verbose, ""));
-                self.state.verbose = true;
+
+                // Step Back
+                if selected != RunningState::Running {
+                    let step_back = h_ui.add(egui::Button::new("Step Back"));
+                    if step_back.clicked() {
+                        self.step_back();
+                    }
+                }
 
                 if reset.clicked() {
                     self.reset(code_editor);
@@ -92,6 +100,8 @@ impl CodeRunner {
         self.state = State::new(&Code::new(code_editor.code.clone()));
         self.state.state = RunningState::Step;
         self.history = VecDeque::new();
+        self.state.verbose = true;
+        self.running = false;
     }
 
     fn step(&mut self) {
@@ -109,6 +119,10 @@ impl CodeRunner {
         }
 
         self.diff(base);
+
+        if self.state.state == RunningState::Haulted {
+            self.running = false;
+        }
 
         self.state.print_verbose();
     }

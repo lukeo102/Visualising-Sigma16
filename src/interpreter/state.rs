@@ -1,5 +1,4 @@
 use crate::assembler::code::Code;
-//use crate::interpreter::interpreter::run;
 use crate::interpreter::memory::Memory;
 use crate::interpreter::register::Register;
 use log::{log, Level};
@@ -103,7 +102,7 @@ impl State {
         monitored
     }
 
-    pub fn reset_altered(mut self) {}
+    pub fn reset_altered(&mut self) {}
 
     //pub fn run(&mut self) {
     //    run(self);

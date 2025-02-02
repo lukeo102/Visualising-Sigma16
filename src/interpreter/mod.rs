@@ -1,4 +1,3 @@
-pub mod history;
 pub mod interpreter;
 pub mod memory;
 mod opcodes;

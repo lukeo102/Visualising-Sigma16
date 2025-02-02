@@ -1,15 +1,12 @@
-use crate::assembler::code::Code;
 use crate::gui::app::VisualisingSigma16;
 use crate::gui::syntax_highlighting::{highlight, CodeTheme};
-use crate::gui::util::format_code;
-use egui::{Galley, Layout, Response, TextBuffer};
+use egui::{Galley, Response};
 use std::sync::Arc;
-use web_sys::js_sys::Function;
 
 pub fn code_editor_frame(
     ui: &mut egui::Ui,
     app: &mut VisualisingSigma16,
-    ctx: &egui::Context,
+    _ctx: &egui::Context,
     editable: bool,
     line_number_layouter: Option<
         &mut dyn for<'a, 'b> FnMut(&'a egui::Ui, &'b str, f32) -> Arc<Galley>,
