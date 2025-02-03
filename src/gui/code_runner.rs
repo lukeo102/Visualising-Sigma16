@@ -12,6 +12,7 @@ pub struct CodeRunner {
     pub state: State,
     pub history: VecDeque<String>,
     pub running: bool,
+    code: Code,
 }
 
 impl Default for CodeRunner {
@@ -23,6 +24,7 @@ impl Default for CodeRunner {
             state,
             history,
             running: false,
+            code: Code::new("".to_string()),
         }
     }
 }
@@ -37,34 +39,36 @@ impl CodeRunner {
                 // Allow reset at any time
                 let reset = h_ui.add(egui::Button::new("Reset"));
 
-                // If we are haulted, we should not be able to step
-                if selected == RunningState::Step {
-                    let step = h_ui.add_enabled(!self.running, egui::Button::new("Step"));
+                if self.state.state == RunningState::Error {
+                } else {
+                    // If we are haulted, we should not be able to step
+                    if selected == RunningState::Step {
+                        let step = h_ui.add_enabled(!self.running, egui::Button::new("Step"));
 
-                    if step.clicked() {
-                        self.step()
+                        if step.clicked() {
+                            self.step()
+                        }
+                    }
+                    if selected == RunningState::Running {
+                        let run = h_ui.add_enabled(!self.running, egui::Button::new("Run"));
+
+                        if run.clicked() {
+                            self.running = true;
+                        }
+
+                        if self.running {
+                            self.step();
+                        }
+                    }
+
+                    // Step Back
+                    if selected != RunningState::Running {
+                        let step_back = h_ui.add(egui::Button::new("Step Back"));
+                        if step_back.clicked() {
+                            self.step_back();
+                        }
                     }
                 }
-                if selected == RunningState::Running {
-                    let run = h_ui.add_enabled(!self.running, egui::Button::new("Run"));
-
-                    if run.clicked() {
-                        self.running = true;
-                    }
-
-                    if self.running {
-                        self.step();
-                    }
-                }
-
-                // Step Back
-                if selected != RunningState::Running {
-                    let step_back = h_ui.add(egui::Button::new("Step Back"));
-                    if step_back.clicked() {
-                        self.step_back();
-                    }
-                }
-
                 if reset.clicked() {
                     self.reset(code_editor);
                 }
@@ -83,6 +87,9 @@ impl CodeRunner {
             RunningState::Haulted => {
                 ui.add(egui::Label::new("Haulted"));
             }
+            RunningState::Error => {
+                ui.add(egui::Label::new("Error"));
+            }
             _ => {
                 egui::ComboBox::from_id_salt("Run Type")
                     .selected_text(format!("{:?}", selected))
@@ -97,8 +104,8 @@ impl CodeRunner {
     }
 
     fn reset(&mut self, code_editor: &CodeEditor) {
-        self.state = State::new(&Code::new(code_editor.code.clone()));
-        self.state.state = RunningState::Step;
+        self.code = Code::new(code_editor.code.clone());
+        self.state = State::new(&self.code);
         self.history = VecDeque::new();
         self.state.verbose = true;
         self.running = false;
@@ -108,10 +115,6 @@ impl CodeRunner {
         let base = self.state.clone();
 
         match self.state.state {
-            RunningState::Init => {
-                log!(Level::Warn, "Trying to run program when in init state");
-            }
-            RunningState::Ready => self.state.state = RunningState::Running,
             RunningState::Running | RunningState::Step => interpreter::step(&mut self.state),
             _ => {
                 log!(Level::Warn, "Unknown Sigma16 interpreter state");

@@ -63,6 +63,11 @@ impl Assembler {
                 }
                 Err(e) => {
                     log!(Level::Warn, "uhh ohh {e:?}");
+                    self.errors.push(AssemblingError {
+                        message: "Unknown token.".to_string(),
+                        line: self.line,
+                        resolution: "".to_string(),
+                    });
                 }
             };
         }

@@ -1,26 +1,31 @@
 use crate::assembler::assembler::Assembler;
+use log::{log, Level};
 use std::collections::HashMap;
 
+use super::error::AssemblingError;
+
+#[derive(serde::Serialize, serde::Deserialize)]
 pub(crate) struct Code {
     pub memory: Vec<u16>,
     pub code: String,
     pub memory_to_code: HashMap<usize, usize>,
     pub symbol_table: HashMap<String, usize>,
-    pub errors: bool,
+    pub errors: Vec<AssemblingError>,
 }
 
 impl Code {
     pub fn new(code: String) -> Code {
-        let mut errors = false;
         let mut assembler = Assembler::new(code);
         assembler.assemble();
 
         if !assembler.errors.is_empty() {
-            errors = true;
-            for error in assembler.errors {
-                println!(
+            for error in assembler.errors.clone() {
+                log!(
+                    Level::Error,
                     "message: {}\nline: {}\n resolution {}",
-                    error.message, error.line, error.resolution
+                    error.message,
+                    error.line,
+                    error.resolution
                 );
             }
         }
@@ -30,7 +35,7 @@ impl Code {
             code: assembler.code,
             memory_to_code: assembler.mem_to_code,
             symbol_table: assembler.symbol_table,
-            errors,
+            errors: assembler.errors,
         }
     }
 

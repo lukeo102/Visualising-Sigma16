@@ -7,8 +7,7 @@ use std::fmt::Display;
 
 #[derive(serde::Serialize, serde::Deserialize, PartialEq, Debug, Clone, serde_diff::SerdeDiff)]
 pub enum RunningState {
-    Init,
-    Ready,
+    Error,
     Running,
     Step,
     Paused,
@@ -19,14 +18,13 @@ pub enum RunningState {
 impl Display for RunningState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            RunningState::Init => "INIT".to_string(),
+            RunningState::Error => "ERROR".to_string(),
             RunningState::Running => "RUNNING".to_string(),
             RunningState::Paused => "PAUSED".to_string(),
             RunningState::Breakpoint => "BREAKPOINT".to_string(),
             RunningState::Haulted => "HALTED".to_string(),
             RunningState::Interrupted => "INTERRUPTED".to_string(),
             RunningState::Step => "STEP".to_string(),
-            RunningState::Ready => "READY".to_string(),
         };
         write!(f, "{str}")
     }
@@ -48,12 +46,20 @@ pub struct State {
 
 impl State {
     pub fn new(code: &Code) -> State {
+        let run_state = if code.errors.is_empty() {
+            log!(Level::Info, "Empty, {:?}", code.errors.len());
+            RunningState::Step
+        } else {
+            log!(Level::Info, "Not empty, {:?}", code.errors.len());
+            RunningState::Error
+        };
+
         let mut state = State {
             pc: (Register::new()),
             ir: (Register::new()),
             r: [Register::new(); 16],
             memory: (Memory::new(Option::from(code.memory.as_slice()))),
-            state: RunningState::Init,
+            state: run_state,
             verbose: false,
             symbol_table: code.symbol_table.clone(),
             monitored_symbols: {
