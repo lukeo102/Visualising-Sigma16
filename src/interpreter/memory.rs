@@ -5,7 +5,6 @@ pub struct Memory {
     contents: Vec<u16>,
     accessed_i: Vec<usize>,
     mem_used: Vec<usize>,
-    last_altered_state: Vec<u16>,
     monitored: Vec<usize>,
 }
 
@@ -20,7 +19,6 @@ impl std::ops::Index<usize> for Memory {
 impl std::ops::IndexMut<usize> for Memory {
     fn index_mut(&mut self, i: usize) -> &mut u16 {
         self.accessed_i.push(i);
-        self.last_altered_state[i] = self.contents[i];
 
         if !self.mem_used.contains(&i) {
             self.mem_used.push(i);
@@ -36,7 +34,6 @@ impl Memory {
         let mut mem = Memory {
             mem_used: Vec::new(),
             contents: Vec::with_capacity(U16_MAX as usize),
-            last_altered_state: Vec::with_capacity(U16_MAX as usize),
             accessed_i: Vec::new(),
             monitored: Vec::new(),
         };
@@ -44,7 +41,6 @@ impl Memory {
             for i in 0..init.len() {
                 mem.contents.push(init[i]);
                 mem.mem_used.push(i);
-                mem.last_altered_state.push(init[i])
             }
         }
         mem

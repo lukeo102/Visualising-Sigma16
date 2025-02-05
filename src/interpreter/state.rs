@@ -108,7 +108,13 @@ impl State {
         monitored
     }
 
-    pub fn reset_altered(&mut self) {}
+    pub fn reset_altered(&mut self) {
+        for reg in &mut self.r {
+            reg.reset_altered();
+        }
+
+        self.memory.reset_accessed();
+    }
 
     //pub fn run(&mut self) {
     //    run(self);

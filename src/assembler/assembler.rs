@@ -25,6 +25,8 @@ pub struct Assembler {
     cursor: usize,
     data_inserts: HashMap<String, Vec<u16>>,
     data_locations: HashMap<String, (u16, usize)>,
+    pub registers_used: Vec<usize>,
+    pub trap_index: Option<usize>,
 }
 
 impl Assembler {
@@ -40,6 +42,8 @@ impl Assembler {
             cursor: 0,
             data_inserts: HashMap::new(),
             data_locations: HashMap::new(),
+            registers_used: Vec::new(),
+            trap_index: None,
         }
     }
     pub fn assemble(&mut self) {
@@ -91,9 +95,18 @@ impl Assembler {
                 .insert(name.clone(), dest.clone() as usize);
         }
 
+        match self.trap_index {
+            Some(_) => {}
+            None => self.errors.push(AssemblingError {
+                message: "No trap instruction, program will never terminate when run.".to_string(),
+                line: 0,
+                resolution: "Add \"trap R0,R0,R0\" at the end of the program.".to_string(),
+            }),
+        }
         // Any left over entries in data_inserts should result in error
 
         self.assembled.shrink_to_fit();
+        self.registers_used.sort_unstable();
     }
 
     fn validate_token(&mut self, token: Tokens) -> Result<Tokens, AssemblingError> {
@@ -150,6 +163,9 @@ impl Assembler {
             Tokens::RRRArg(args) => {
                 let reg: u16 = self.parse_rnargs(args, 3);
                 self.assembled[self.cursor - 1] |= reg;
+                if self.assembled[self.cursor - 1] == 0xc000_u16 {
+                    self.trap_index = Some(self.cursor - 1);
+                }
             }
             Tokens::RRArg(args) => {
                 let reg: u16 = self.parse_rnargs(args, 2);
@@ -221,10 +237,15 @@ impl Assembler {
 
     fn parse_rnargs(&mut self, args: String, n: usize) -> u16 {
         let mut arg = 0_u16;
+        let mut temp = 0_u16;
 
         // Reverse Rd,Ra,Rb then loop over them
         for (i, reg) in args.rsplit(',').enumerate().take(n) {
-            arg |= reg[1..].parse::<u16>().unwrap() << (4 * i as u16);
+            temp = reg[1..].parse::<u16>().unwrap();
+            arg |= temp << (4 * i as u16);
+            if !self.registers_used.contains(&(temp as usize)) {
+                self.registers_used.push(temp as usize);
+            }
         }
 
         arg
@@ -239,21 +260,29 @@ impl Assembler {
         let mut addr = 0_u16;
         let extarcted_args = regex.captures(args).unwrap();
 
-        arg |= extarcted_args
+        let rd = extarcted_args
             .name("rd")
             .unwrap()
             .as_str()
             .parse::<u16>()
-            .unwrap()
-            << 8;
-
-        arg |= extarcted_args
-            .name("disp")
+            .unwrap();
+        let disp = extarcted_args
+            .name("rd")
             .unwrap()
             .as_str()
             .parse::<u16>()
-            .unwrap()
-            << 4;
+            .unwrap();
+
+        arg |= rd << 8;
+        arg |= disp << 4;
+
+        if !self.registers_used.contains(&(rd as usize)) {
+            self.registers_used.push(rd as usize);
+        }
+
+        if !self.registers_used.contains(&(disp as usize)) {
+            self.registers_used.push(disp as usize);
+        }
 
         if let Some(cons) = extarcted_args.name("cons") {
             // If constant in addr

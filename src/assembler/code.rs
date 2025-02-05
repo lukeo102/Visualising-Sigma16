@@ -11,6 +11,8 @@ pub(crate) struct Code {
     pub memory_to_code: HashMap<usize, usize>,
     pub symbol_table: HashMap<String, usize>,
     pub errors: Vec<AssemblingError>,
+    pub used_registers: Vec<usize>,
+    pub trap_index: Option<usize>,
 }
 
 impl Code {
@@ -36,6 +38,8 @@ impl Code {
             memory_to_code: assembler.mem_to_code,
             symbol_table: assembler.symbol_table,
             errors: assembler.errors,
+            trap_index: assembler.trap_index,
+            used_registers: assembler.registers_used,
         }
     }
 

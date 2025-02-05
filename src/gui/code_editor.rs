@@ -20,8 +20,8 @@ pub fn code_editor_frame(
     //});
 
     ui.horizontal(|ui| {
-        CodeEditor::make_line_counter(&mut app.code_editor, ui, line_number_layouter);
-        CodeEditor::make_editor(&mut app.code_editor, ui, editable);
+        CodeEditor::make_line_counter(&app.code_editor.code, ui, line_number_layouter);
+        CodeEditor::make_editor(&mut app.code_editor.code, ui, editable);
     });
 }
 
@@ -40,8 +40,7 @@ impl Default for CodeEditor {
 }
 
 impl CodeEditor {
-    pub fn make_editor(&mut self, ui: &mut egui::Ui, editable: bool) -> Response {
-        let Self { code } = self;
+    pub fn make_editor(code: &mut String, ui: &mut egui::Ui, editable: bool) -> Response {
         ui.add(
             egui::TextEdit::multiline(code)
                 .font(egui::TextStyle::Monospace) // for cursor height
@@ -57,14 +56,12 @@ impl CodeEditor {
     }
 
     pub fn make_line_counter(
-        &mut self,
+        code: &String,
         ui: &mut egui::Ui,
         line_number_layouter: Option<
             &mut dyn for<'a, 'b> FnMut(&'a egui::Ui, &'b str, f32) -> Arc<Galley>,
         >,
     ) -> Response {
-        let Self { code } = self;
-
         let line_count = code.as_str().lines().count();
         let mut line_numbers_builder: Vec<String> = Vec::with_capacity(line_count);
         let indent = line_count.to_string().len() + 1;

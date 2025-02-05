@@ -135,11 +135,11 @@ impl Register {
     }
 
     pub fn get_altered(&mut self) -> bool {
-        if self.altered {
-            // self.altered = false;
-            return true;
-        }
-        false
+        self.altered
+    }
+
+    pub fn reset_altered(&mut self) {
+        self.altered = false;
     }
 
     pub fn set_r0(&mut self) {

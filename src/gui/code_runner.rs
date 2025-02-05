@@ -74,8 +74,8 @@ impl CodeRunner {
                 }
             });
             v_ui.horizontal(|h_ui| {
-                code_editor.make_line_counter(h_ui, None);
-                code_editor.make_editor(h_ui, false);
+                CodeEditor::make_line_counter(&self.code.get_code(), h_ui, None);
+                CodeEditor::make_editor(&mut self.code.get_code(), h_ui, false);
             })
         });
     }
@@ -150,6 +150,10 @@ impl CodeRunner {
         if self.history.len() < 1 {
             log!(Level::Warn, "No more history to step back into.");
             return;
+        }
+
+        if self.state.state != RunningState::Step {
+            self.state.state = RunningState::Step;
         }
 
         let diff = self.history.pop_back().unwrap();
