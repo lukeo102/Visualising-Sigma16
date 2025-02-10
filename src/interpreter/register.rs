@@ -7,15 +7,8 @@ use std::ops::{Add, Div, Mul, Rem, Sub};
 pub struct Register {
     value: u16,
     altered: bool,
+    accessed: bool,
     is_r0: bool,
-}
-
-impl Add<u16> for Register {
-    type Output = u32;
-
-    fn add(self, rhs: u16) -> Self::Output {
-        u32::from(self.value) + u32::from(rhs)
-    }
 }
 
 impl Add<Register> for Register {
@@ -87,6 +80,7 @@ impl Register {
         Register {
             value: 0,
             altered: false,
+            accessed: false,
             is_r0: false,
         }
     }
@@ -129,8 +123,12 @@ impl Register {
         self.value = value;
     }
 
+    pub fn get_ui(&mut self) -> u16 {
+        self.value
+    }
+
     pub fn get(&mut self) -> u16 {
-        self.altered = true;
+        self.accessed = true;
         self.value
     }
 
@@ -138,8 +136,13 @@ impl Register {
         self.altered
     }
 
+    pub fn get_accessed(&mut self) -> bool {
+        self.accessed
+    }
+
     pub fn reset_altered(&mut self) {
         self.altered = false;
+        self.accessed = false;
     }
 
     pub fn set_r0(&mut self) {

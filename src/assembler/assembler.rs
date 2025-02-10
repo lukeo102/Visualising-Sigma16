@@ -173,6 +173,7 @@ impl Assembler {
             }
             Tokens::IRXArg(args) => {
                 let (register, address) = self.parse_irxargs(&args);
+
                 self.assembled[self.cursor - 1] |= register;
                 self.assembled.push(address);
                 self.mem_to_code.insert(self.cursor, self.line);
@@ -267,12 +268,13 @@ impl Assembler {
             .parse::<u16>()
             .unwrap();
         let disp = extarcted_args
-            .name("rd")
+            .name("disp")
             .unwrap()
             .as_str()
             .parse::<u16>()
             .unwrap();
 
+        // 0xf{rd}{disp}1
         arg |= rd << 8;
         arg |= disp << 4;
 
@@ -311,7 +313,17 @@ impl Assembler {
             regex = r"(?P<type>jump(?:[a-zA-Z]{2})?) +(?:(?P<label>[A-z][A-Za-z0-9]*)|(?P<const>\$[A-Fa-f0-9]{4}))(?:\[R(?P<register>[0-9]|1[0-5])])?"
         );
 
-        let extracted_command = regex.captures(&command).unwrap();
+        let extracted_command = match regex.captures(&command) {
+            None => {
+                self.errors.push(AssemblingError {
+                    message: "Jump instruction error".to_string(),
+                    line: self.line,
+                    resolution: "Unknown error".to_string(),
+                });
+                return (0, 0);
+            }
+            Some(captures) => captures,
+        };
         let mut instruction = match Some(extracted_command.name("type").unwrap().as_str()) {
             Some("jump") => 0xf003_u16,
             Some("jumplt") => 0xf405_u16,

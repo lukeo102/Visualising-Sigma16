@@ -12,7 +12,7 @@ pub struct CodeRunner {
     pub state: State,
     pub history: VecDeque<String>,
     pub running: bool,
-    code: Code,
+    pub code: Code,
 }
 
 impl Default for CodeRunner {
@@ -113,6 +113,7 @@ impl CodeRunner {
 
     fn step(&mut self) {
         let base = self.state.clone();
+        self.state.reset_altered();
 
         match self.state.state {
             RunningState::Running | RunningState::Step => interpreter::step(&mut self.state),

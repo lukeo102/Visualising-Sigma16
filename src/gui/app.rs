@@ -7,6 +7,8 @@ use eframe::epaint::text::LayoutJob;
 use egui::TextBuffer;
 use log::{log, Level};
 
+use super::data_flow;
+
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct VisualisingSigma16 {
@@ -69,6 +71,12 @@ impl eframe::App for VisualisingSigma16 {
             .resizable([true, true])
             .show(ctx, |ui| {
                 CodeRunner::gui(&mut self.code_runner, ui, &mut self.code_editor);
+            });
+
+        egui::Window::new("Test")
+            .resizable([true, true])
+            .show(ctx, |ui| {
+                data_flow::make(ui, self);
             });
 
         let code = Code::new(self.code_editor.code.clone());

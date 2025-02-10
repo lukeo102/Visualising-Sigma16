@@ -31,7 +31,8 @@ fn execute(opcode: OpCodes, state: &mut State) {
         // ================
         OpCodes::Add(..) => {
             if let OpCodes::Add(rd, ra, rb) = opcode {
-                let result: u32 = state.r[ra as usize] + state.r[rb as usize];
+                let result: u32 =
+                    state.r[ra as usize].get() as u32 + state.r[rb as usize].get() as u32;
                 state.r[rd as usize].set(result as u16);
 
                 // Set R15 bits
@@ -58,7 +59,8 @@ fn execute(opcode: OpCodes, state: &mut State) {
             if let OpCodes::Addc(rd, ra, rb) = opcode {
                 // Is carry bit set?
                 let carry_set: bool = (state.r[15].get() & R15_C) > 0;
-                let mut result: u32 = state.r[ra as usize] + state.r[rb as usize];
+                let mut result: u32 =
+                    state.r[ra as usize].get() as u32 + state.r[rb as usize].get() as u32;
 
                 if carry_set {
                     result += 1;
@@ -98,7 +100,7 @@ fn execute(opcode: OpCodes, state: &mut State) {
         OpCodes::Sub(..) => {
             if let OpCodes::Sub(rd, ra, rb) = opcode {
                 // let mut rd_temp = state.r[rd as usize];
-                let result = state.r[ra as usize] - state.r[rb as usize];
+                let result = state.r[ra as usize].get() as u32 - state.r[rb as usize].get() as u32;
                 state.r[rd as usize].set(result as u16);
                 if state.verbose {
                     println!(
@@ -132,7 +134,7 @@ fn execute(opcode: OpCodes, state: &mut State) {
         }
         OpCodes::Mul(..) => {
             if let OpCodes::Mul(rd, ra, rb) = opcode {
-                let result = state.r[ra as usize] * state.r[rb as usize];
+                let result = state.r[ra as usize].get() as u32 * state.r[rb as usize].get() as u32;
                 if state.verbose {
                     println!(
                         "  {} * {} = {} Into R{}",
@@ -155,15 +157,18 @@ fn execute(opcode: OpCodes, state: &mut State) {
         }
         OpCodes::Muln(..) => {
             if let OpCodes::Muln(rd, ra, rb) = opcode {
-                let temp: u32 = state.r[ra as usize] * state.r[rd as usize];
+                let temp: u32 =
+                    state.r[ra as usize].get() as u32 * state.r[rd as usize].get() as u32;
                 state.r[rb as usize].set(temp as u16);
                 state.r[15].set((temp >> 16) as u16);
             }
         }
         OpCodes::Div(..) => {
             if let OpCodes::Div(rd, ra, rb) = opcode {
-                state.r[rb as usize].set(state.r[ra as usize] / state.r[rd as usize]);
-                state.r[15].set(state.r[ra as usize] % state.r[rd as usize]);
+                let ra_value = state.r[ra as usize].get();
+                let rd_value = state.r[rd as usize].get();
+                state.r[rb as usize].set(ra_value / rd_value);
+                state.r[15].set(ra_value % rd_value);
                 if state.verbose {
                     println!(
                         "  {} / {} = {} Into R{}, Remainder {}",
@@ -184,10 +189,10 @@ fn execute(opcode: OpCodes, state: &mut State) {
                 // The right most 16 bits is Ra
                 let mut dividend: u32 = u32::from(state.r[15].get()) << 16;
                 // left most 16 bits is R15, bitwise or with 0xffff[Ra] where Ra is 2 bytes
-                dividend |= u32::from(state.r[ra as usize]) | dividend_mask;
+                dividend |= u32::from(state.r[ra as usize].get()) | dividend_mask;
 
-                let quotient: u32 = dividend / u32::from(state.r[rd as usize]);
-                let remainder: u16 = (dividend % u32::from(state.r[rd as usize])) as u16;
+                let quotient: u32 = dividend / u32::from(state.r[rd as usize].get());
+                let remainder: u16 = (dividend % u32::from(state.r[rd as usize].get())) as u16;
 
                 state.r[15].set((quotient >> 16) as u16);
                 state.r[rb as usize].set(quotient as u16);
@@ -298,7 +303,12 @@ fn execute(opcode: OpCodes, state: &mut State) {
             if let OpCodes::Lea(dst, disp, v) = opcode {
                 state.r[dst as usize].set((u32::from(v) + u32::from(disp)) as u16);
                 if state.verbose {
-                    println!("  Load {:#06x} into R{}", state.r[dst as usize].get(), dst);
+                    log!(
+                        Level::Info,
+                        "  Load {:#06x} into R{}",
+                        state.r[dst as usize].get(),
+                        dst
+                    );
                 }
             }
         }
