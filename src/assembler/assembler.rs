@@ -42,7 +42,7 @@ impl Assembler {
             cursor: 0,
             data_inserts: HashMap::new(),
             data_locations: HashMap::new(),
-            registers_used: Vec::new(),
+            registers_used: vec![15],
             trap_index: None,
         }
     }

@@ -51,21 +51,30 @@ fn make_memory(ui: &mut egui::Ui, app: &mut VisualisingSigma16) {
             ui.horizontal(|ui| {
                 ui.add(egui::Label::new("Line: "));
                 if app.code_runner.state.pc.get() as usize == mem {
-                    ui.label(egui::RichText::new(format!("{mem}")).color(RED_TEXT));
+                    ui.label(
+                        egui::RichText::new(format!(
+                            "{:?}",
+                            app.code_runner.code.memory_to_code.get(&mem).unwrap()
+                        ))
+                        .color(RED_TEXT),
+                    );
                 } else {
-                    ui.label(egui::RichText::new(format!("{mem}")));
+                    ui.label(egui::RichText::new(format!(
+                        "{:?}",
+                        app.code_runner.code.memory_to_code.get(&mem).unwrap()
+                    )));
                 }
 
-                ui.label(egui::RichText::new(format!(" | {:#06x}", mem)));
+                ui.label(egui::RichText::new(format!(" | {:#06X} ", mem)));
 
                 if app.code_runner.state.memory.get_altered_i().contains(&mem) {
                     ui.label(
-                        egui::RichText::new(format!("{:#06x}", app.code_runner.state.memory[mem]))
+                        egui::RichText::new(format!("{:#06X}", app.code_runner.state.memory[mem]))
                             .color(GREEN_TEXT),
                     );
                 } else {
                     ui.label(egui::RichText::new(format!(
-                        "{:#06x}",
+                        "{:#06X}",
                         app.code_runner.state.memory[mem]
                     )));
                 }
