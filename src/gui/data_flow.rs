@@ -43,20 +43,17 @@ fn make_memory(ui: &mut egui::Ui, runner: &mut CodeRunner) {
         ui.heading("Memory");
         for mem in 0..runner.state.memory.get_used().len() {
             ui.horizontal(|ui| {
-                ui.add(egui::Label::new("Line: "));
-                if runner.state.pc.get() as usize == mem {
-                    ui.label(
-                        egui::RichText::new(format!(
-                            "{:?}",
-                            runner.code.memory_to_code.get(&mem).unwrap()
-                        ))
-                        .color(RED_TEXT),
-                    );
-                } else {
-                    ui.label(egui::RichText::new(format!(
-                        "{:?}",
-                        runner.code.memory_to_code.get(&mem).unwrap()
-                    )));
+                let line = runner.code.memory_to_code.get(&mem);
+                match line {
+                    Some(line) => {
+                        ui.add(egui::Label::new("Line: "));
+                        if runner.state.pc.get() as usize == mem {
+                            ui.label(egui::RichText::new(format!("{:?}", line)).color(RED_TEXT));
+                        } else {
+                            ui.label(egui::RichText::new(format!("{:?}", line)));
+                        }
+                    }
+                    None => {}
                 }
 
                 ui.label(egui::RichText::new(format!(" | {:#06X} ", mem)));

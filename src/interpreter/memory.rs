@@ -12,7 +12,11 @@ impl std::ops::Index<usize> for Memory {
     type Output = u16;
 
     fn index(&self, i: usize) -> &u16 {
-        &self.contents[i]
+        if self.mem_used.contains(&i) {
+            &self.contents[i]
+        } else {
+            &0_u16
+        }
     }
 }
 
@@ -23,6 +27,7 @@ impl std::ops::IndexMut<usize> for Memory {
         if !self.mem_used.contains(&i) {
             self.mem_used.push(i);
             self.mem_used.sort_unstable();
+            self.contents.insert(i, 0_u16);
         }
 
         &mut self.contents[i]
