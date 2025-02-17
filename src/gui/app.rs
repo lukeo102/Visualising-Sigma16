@@ -1,7 +1,6 @@
 use crate::gui::code_editor::CodeEditor;
 use crate::gui::code_runner::CodeRunner;
 use crate::gui::data_flow;
-use crate::gui::monitor::make_monitor_toggles;
 use log::{log, Level};
 
 #[derive(serde::Deserialize, serde::Serialize)]

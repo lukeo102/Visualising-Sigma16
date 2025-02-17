@@ -1,3 +1,5 @@
+use log::{log, Level};
+
 pub const U16_MAX: u16 = 65535;
 
 #[derive(serde::Serialize, serde::Deserialize, serde_diff::SerdeDiff, Clone)]
@@ -27,7 +29,9 @@ impl std::ops::IndexMut<usize> for Memory {
         if !self.mem_used.contains(&i) {
             self.mem_used.push(i);
             self.mem_used.sort_unstable();
-            self.contents.insert(i, 0_u16);
+        }
+        if self.contents.len() < i + 1 {
+            self.contents.resize(i + 1, 0_u16);
         }
 
         &mut self.contents[i]
