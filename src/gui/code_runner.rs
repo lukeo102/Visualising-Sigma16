@@ -13,6 +13,7 @@ pub struct CodeRunner {
     pub history: VecDeque<String>,
     pub running: bool,
     pub code: Code,
+    pub data_flow: bool,
 }
 
 impl Default for CodeRunner {
@@ -25,12 +26,13 @@ impl Default for CodeRunner {
             history,
             running: false,
             code: Code::new("".to_string()),
+            data_flow: false,
         }
     }
 }
 
 impl CodeRunner {
-    pub fn gui(&mut self, ui: &mut egui::Ui, code_editor: &mut CodeEditor) {
+    pub fn gui(&mut self, ui: &mut egui::Ui, code: String) {
         ui.vertical(|v_ui| {
             v_ui.horizontal(|h_ui| {
                 let mut selected = self.state.state.clone();
@@ -69,8 +71,11 @@ impl CodeRunner {
                         }
                     }
                 }
+
+                h_ui.add(egui::Checkbox::new(&mut self.data_flow, "Data Flow"));
+
                 if reset.clicked() {
-                    self.reset(code_editor);
+                    self.reset(code);
                 }
             });
             v_ui.horizontal(|h_ui| {
@@ -103,8 +108,8 @@ impl CodeRunner {
         selected
     }
 
-    fn reset(&mut self, code_editor: &CodeEditor) {
-        self.code = Code::new(code_editor.code.clone());
+    pub fn reset(&mut self, code: String) {
+        self.code = Code::new(code);
         self.state = State::new(&self.code);
         self.history = VecDeque::new();
         self.state.verbose = true;

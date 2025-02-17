@@ -1,45 +1,72 @@
 use crate::gui::app::VisualisingSigma16;
+use crate::gui::code_runner::CodeRunner;
 use crate::gui::syntax_highlighting::{highlight, CodeTheme};
 use egui::{Galley, Response};
 use std::sync::Arc;
-
-pub fn code_editor_frame(
-    ui: &mut egui::Ui,
-    app: &mut VisualisingSigma16,
-    _ctx: &egui::Context,
-    editable: bool,
-    line_number_layouter: Option<
-        &mut dyn for<'a, 'b> FnMut(&'a egui::Ui, &'b str, f32) -> Arc<Galley>,
-    >,
-) {
-    //egui::panel::SidePanel::left("line_numbers").show_inside(ui, |ui| {
-    //    CodeEditor::make_line_counter(&mut app.code_editor, ui);
-    //});
-    //egui::panel::SidePanel::right("code").show_inside(ui, |ui| {
-    //    CodeEditor::make_editor(&mut app.code_editor, ui);
-    //});
-
-    ui.horizontal(|ui| {
-        CodeEditor::make_line_counter(&app.code_editor.code, ui, line_number_layouter);
-        CodeEditor::make_editor(&mut app.code_editor.code, ui, editable);
-    });
-}
 
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct CodeEditor {
     pub code: String,
+    pub opened: bool,
+    pub windowed: bool,
+    pub runner: Option<CodeRunner>,
 }
 
 impl Default for CodeEditor {
     fn default() -> Self {
         Self {
             code: "".to_string(),
+            opened: true,
+            windowed: false,
+            runner: None,
         }
     }
 }
 
 impl CodeEditor {
+    pub fn gui(
+        &mut self,
+        ui: &mut egui::Ui,
+        editable: bool,
+        line_number_layouter: Option<
+            &mut dyn for<'a, 'b> FnMut(&'a egui::Ui, &'b str, f32) -> Arc<Galley>,
+        >,
+    ) {
+        ui.vertical(|ui| {
+            match self.runner {
+                Some(_) => {
+                    let button = ui.add(egui::Button::new("Close Runner"));
+
+                    if button.clicked() {
+                        self.close_runner();
+                    }
+                }
+                None => {
+                    let button = ui.add(egui::Button::new("Open Runner"));
+
+                    if button.clicked() {
+                        self.open_runner();
+                    }
+                }
+            }
+            ui.horizontal(|ui| {
+                CodeEditor::make_line_counter(&self.code, ui, line_number_layouter);
+                CodeEditor::make_editor(&mut self.code, ui, editable);
+            });
+        });
+    }
+
+    fn open_runner(&mut self) {
+        let mut runner = CodeRunner::default();
+        runner.reset(self.code.clone());
+        self.runner = Some(runner);
+    }
+
+    fn close_runner(&mut self) {
+        self.runner = None;
+    }
+
     pub fn make_editor(code: &mut String, ui: &mut egui::Ui, editable: bool) -> Response {
         ui.add(
             egui::TextEdit::multiline(code)
