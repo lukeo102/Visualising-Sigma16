@@ -11,6 +11,9 @@ pub struct CodeEditor {
     pub opened: bool,
     pub windowed: bool,
     pub runner: Option<CodeRunner>,
+    pub name: String,
+    pub renaming: bool,
+    pub deleting: bool,
 }
 
 impl Default for CodeEditor {
@@ -20,11 +23,20 @@ impl Default for CodeEditor {
             opened: true,
             windowed: false,
             runner: None,
+            name: "untitled".to_string(),
+            renaming: false,
+            deleting: false,
         }
     }
 }
 
 impl CodeEditor {
+    pub fn new_windowed() -> Self {
+        let mut new_editor = CodeEditor::default();
+        new_editor.windowed = true;
+        new_editor
+    }
+
     pub fn gui(
         &mut self,
         ui: &mut egui::Ui,
@@ -34,22 +46,38 @@ impl CodeEditor {
         >,
     ) {
         ui.vertical(|ui| {
-            match self.runner {
-                Some(_) => {
-                    let button = ui.add(egui::Button::new("Close Runner"));
+            ui.horizontal(|ui| {
+                match self.runner {
+                    Some(_) => {
+                        let button = ui.add(egui::Button::new("Close Runner"));
 
-                    if button.clicked() {
-                        self.close_runner();
+                        if button.clicked() {
+                            self.close_runner();
+                        }
+                    }
+                    None => {
+                        let button = ui.add(egui::Button::new("Open Runner"));
+
+                        if button.clicked() {
+                            self.open_runner();
+                        }
                     }
                 }
-                None => {
-                    let button = ui.add(egui::Button::new("Open Runner"));
 
-                    if button.clicked() {
-                        self.open_runner();
-                    }
+                if ui.add(egui::Button::new("Rename")).clicked() {
+                    self.renaming = !self.renaming;
                 }
-            }
+
+                if ui.add(egui::Button::new("Close")).clicked() {
+                    self.opened = false;
+                }
+
+                ui.checkbox(&mut self.windowed, "Windowed");
+
+                if ui.add(egui::Button::new("Delete")).clicked() {
+                    self.deleting = true;
+                }
+            });
             ui.horizontal(|ui| {
                 CodeEditor::make_line_counter(&self.code, ui, line_number_layouter);
                 CodeEditor::make_editor(&mut self.code, ui, editable);
