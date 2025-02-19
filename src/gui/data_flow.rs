@@ -8,8 +8,9 @@ const GREEN_TEXT: egui::Color32 = egui::Color32::from_rgb(50, 255, 50);
 pub fn make(ui: &mut egui::Ui, runner: &mut CodeRunner) {
     ui.horizontal(|ui| {
         make_registers(ui, runner);
-        ui.add(egui::Separator::default());
         make_memory(ui, runner);
+        ui.add(egui::Separator::default().vertical());
+        make_symbol_table(ui, runner);
     });
 }
 
@@ -46,6 +47,8 @@ fn make_memory(ui: &mut egui::Ui, runner: &mut CodeRunner) {
     ui.vertical(|ui| {
         ui.heading("Memory");
         TableBuilder::new(ui)
+            .id_salt(uuid::Uuid::new_v4())
+            .cell_layout(make_table_layout())
             .striped(true)
             .column(Column::auto())
             .column(Column::remainder())
@@ -110,4 +113,47 @@ fn make_memory(ui: &mut egui::Ui, runner: &mut CodeRunner) {
                 }
             });
     });
+}
+
+fn make_symbol_table(ui: &mut egui::Ui, runner: &mut CodeRunner) {
+    ui.vertical(|ui| {
+        ui.heading("Symbol Table");
+        TableBuilder::new(ui)
+            .id_salt(uuid::Uuid::new_v4())
+            .striped(true)
+            .columns(Column::auto(), 3)
+            .header(15.0, |mut header| {
+                header.col(|ui| {
+                    ui.label("Symbol");
+                });
+                header.col(|ui| {
+                    ui.label("Line");
+                });
+                header.col(|ui| {
+                    ui.label("Memory Location");
+                });
+            })
+            .body(|mut body| {
+                for (symbol, location) in &runner.code.symbol_table {
+                    body.row(15.0, |mut row| {
+                        row.col(|ui| {
+                            ui.label(symbol);
+                        });
+                        row.col(|ui| {
+                            ui.label(format!(
+                                "{:?}",
+                                runner.code.memory_to_code.get(location).unwrap()
+                            ));
+                        });
+                        row.col(|ui| {
+                            ui.label(format!("{:#06X}", location));
+                        });
+                    });
+                }
+            });
+    });
+}
+
+fn make_table_layout() -> egui::Layout {
+    egui::Layout::default().with_main_align(egui::Align::Center)
 }

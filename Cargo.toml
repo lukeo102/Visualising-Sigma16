@@ -23,11 +23,11 @@ target_arch = "wasm32"
 regex = "1.11.0"
 logos = { version = "0.14.2", features = ["debug"] }
 serde = { version = "1.0.213", features = ["derive"] }
-egui = "0.29.1"
+egui = "0.31.0"
 egui_dock = "0.14.0"
-egui_extras = { version = "0.29.1", features = ["serde", "syntect"] }
+egui_extras = { version = "0.31.0", features = ["serde", "syntect"] }
 enum-map = "2.7.3"
-eframe = { version = "0.29", features = [
+eframe = { version = "0.31.0", features = [
     "accesskit",     # Make egui compatible with screen readers. NOTE: adds a lot of dependencies.
     "default_fonts", # Embed the default egui fonts.
     "glow",          # Use the glow rendering backend. Alternative: "wgpu".
@@ -39,6 +39,7 @@ wasm-bindgen-futures = "0.4"
 #diff-struct = "0.5.3"
 serde-diff = "0.4.1"
 serde_json = "1.0.138"
+uuid = { version = "1.13.2", features = ["v4", "js"] }
 
 [profile.release]
 opt-level = 2 # fast and small wasm
