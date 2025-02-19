@@ -8,9 +8,18 @@ const GREEN_TEXT: egui::Color32 = egui::Color32::from_rgb(50, 255, 50);
 pub fn make(ui: &mut egui::Ui, runner: &mut CodeRunner) {
     ui.horizontal(|ui| {
         make_registers(ui, runner);
-        make_memory(ui, runner);
-        ui.add(egui::Separator::default().vertical());
-        make_symbol_table(ui, runner);
+        TableBuilder::new(ui)
+            .columns(Column::auto(), 2)
+            .body(|mut body| {
+                body.row(100.0, |mut row| {
+                    row.col(|ui| {
+                        make_memory(ui, runner);
+                    });
+                    row.col(|ui| {
+                        make_symbol_table(ui, runner);
+                    });
+                });
+            });
     });
 }
 
@@ -45,14 +54,14 @@ fn make_memory(ui: &mut egui::Ui, runner: &mut CodeRunner) {
     let mut last_line = U16_MAX as usize + 1;
     let mut scroll_row: usize = 0;
     ui.vertical(|ui| {
+        ui.set_min_width(160.0);
         ui.heading("Memory");
         TableBuilder::new(ui)
             .id_salt(uuid::Uuid::new_v4())
-            .cell_layout(make_table_layout())
+            //.cell_layout(make_table_layout())
             .striped(true)
-            .column(Column::auto())
-            .column(Column::remainder())
-            .column(Column::remainder())
+            .columns(Column::remainder(), 3)
+            .resizable(false)
             .scroll_to_row(runner.state.pc.get() as usize, Some(egui::Align::TOP))
             .header(15.0, |mut header| {
                 header.col(|ui| {
@@ -117,11 +126,12 @@ fn make_memory(ui: &mut egui::Ui, runner: &mut CodeRunner) {
 
 fn make_symbol_table(ui: &mut egui::Ui, runner: &mut CodeRunner) {
     ui.vertical(|ui| {
+        ui.set_min_width(160.0);
         ui.heading("Symbol Table");
         TableBuilder::new(ui)
             .id_salt(uuid::Uuid::new_v4())
             .striped(true)
-            .columns(Column::auto(), 3)
+            .columns(Column::remainder(), 3)
             .header(15.0, |mut header| {
                 header.col(|ui| {
                     ui.label("Symbol");
@@ -130,7 +140,7 @@ fn make_symbol_table(ui: &mut egui::Ui, runner: &mut CodeRunner) {
                     ui.label("Line");
                 });
                 header.col(|ui| {
-                    ui.label("Memory Location");
+                    ui.label("Location");
                 });
             })
             .body(|mut body| {

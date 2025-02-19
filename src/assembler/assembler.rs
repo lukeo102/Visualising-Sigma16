@@ -112,6 +112,14 @@ impl Assembler {
     fn validate_token(&mut self, token: Tokens) -> Result<Tokens, AssemblingError> {
         match token {
             Tokens::Ignore | Tokens::Newline => Ok(token),
+            Tokens::Label(_) => match self.last_token_processed {
+                Tokens::Newline => Ok(token),
+                _ => Err(AssemblingError {
+                    message: "Labels need to be on a new line.".to_string(),
+                    line: self.line,
+                    resolution: "Put the label on a new line.".to_string(),
+                }),
+            },
             Tokens::RRRArg(_) => match self.last_token_processed {
                 Tokens::RRR(_) => Ok(token),
                 _ => Err(AssemblingError {
@@ -141,7 +149,7 @@ impl Assembler {
 
             Tokens::RRR(_) | Tokens::RR(_) | Tokens::IRX(_) | Tokens::Jump(_) | Tokens::Data(_) => {
                 match self.last_token_processed {
-                    Tokens::Newline => Ok(token),
+                    Tokens::Newline | Tokens::Label(_) => Ok(token),
                     _ => Err(AssemblingError {
                         message: "Instruction not on a new line.".to_string(),
                         line: self.line,
@@ -179,46 +187,39 @@ impl Assembler {
                 self.mem_to_code.insert(self.cursor, self.line);
                 self.cursor += 1;
             }
+            Tokens::Label(arg) => {
+                let label = arg.replace(" ", "");
+
+                self.data_locations
+                    .insert(label, (self.cursor as u16, self.line));
+            }
             Tokens::Data(args) => {
                 regex!(
-                    regex = r"(?:(?P<name>[a-zA-Z][a-zA-Z0-9]*) +(?P<data>data) +(?:(?P<var>[a-zA-Z][a-zA-Z0-9]*)|(?P<const>[0-9]+)|(?P<hex>\$[a-fA-F0-9]{4})))|(?:(?P<label>[a-zA-Z][a-zA-Z0-9]*) *\n?)"
+                    regex = r" +data +(?:(P?<var>[a-zA-Z][a-zA-Z0-9_]*)|(?P<const>[0-9]+)|(?P<hex>\$[a-fA-F0-9]{4}))"
                 );
 
                 let extracted = regex.captures(&args).unwrap();
 
-                if let Some(_) = extracted.name("data") {
-                    // If data
-                    let name = extracted["name"].to_string();
+                if let Some(value) = extracted.name("hex") {
+                    // Match hex
+                    self.assembled
+                        .push(u16::from_str_radix(&value.as_str()[1..], 16).unwrap());
+                } else if let Some(value) = extracted.name("const") {
+                    // Match constant
+                    self.assembled.push(value.as_str().parse::<u16>().unwrap());
+                } else if let Some(value) = extracted.name("var") {
+                    // Match variable
+                    self.assembled.push(0_u16);
 
-                    if let Some(value) = extracted.name("hex") {
-                        // Match hex
-                        self.assembled
-                            .push(u16::from_str_radix(&value.as_str()[1..], 16).unwrap());
-                    } else if let Some(value) = extracted.name("const") {
-                        // Match constant
-                        self.assembled.push(value.as_str().parse::<u16>().unwrap());
-                    } else if let Some(value) = extracted.name("var") {
-                        // Match variable
-                        self.assembled.push(0_u16);
-
-                        self.data_inserts
-                            .entry(value.as_str().parse().unwrap())
-                            .or_default()
-                            .push(self.cursor as u16);
-                    }
-                    self.data_locations
-                        .insert(name, (self.cursor as u16, self.line));
-                    self.mem_to_code.insert(self.cursor, self.line);
-                    self.cursor += 1;
-                } else {
-                    // else jump label
-                    let name = extracted["label"].to_string();
-
-                    self.data_locations.insert(
-                        name.as_str().parse().unwrap(),
-                        (self.cursor as u16, self.line),
-                    );
+                    self.data_inserts
+                        .entry(value.as_str().parse().unwrap())
+                        .or_default()
+                        .push(self.cursor as u16);
                 }
+                //self.data_locations
+                //    .insert(name, (self.cursor as u16, self.line));
+                self.mem_to_code.insert(self.cursor, self.line);
+                self.cursor += 1;
             }
             Tokens::Jump(command) => {
                 let (instruction, address) = self.parse_jump(command);
