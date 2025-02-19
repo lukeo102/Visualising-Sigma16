@@ -1,36 +1,10 @@
-use std::fs;
-
-use gui::gui::run_app;
-
 mod assembler;
 mod gui;
 mod interpreter;
-//mod tui;
 
+use gui::gui::run_app;
 use interpreter::state;
 
 fn main() {
     run_app();
-}
-
-//fn main() {
-//    // let mem = [
-//    //     0xf101_u16, 0x0007_u16, 0xf211_u16, 0x0007_u16, 0x1312_u16, 0x1421_u16, 0xc000_u16,
-//    //     0x0001_u16, 0x0101_u16,
-//    // ];
-//
-//    let code = assembler::code::Code::new(read_from_file("assemble"));
-//
-//    code.memory.iter().for_each(|x| println!("{:#06x}", x));
-//    let mut state = state::State::new(code.memory.as_slice());
-//    state.verbose = true;
-//    state.state = state::RunningState::Ready;
-//    state.monitor_enable(state::MonitorType::Address(1));
-//    if !code.errors {
-//        interpreter::interpreter::run(&mut state);
-//    }
-//}
-
-pub fn read_from_file(file: &str) -> String {
-    fs::read_to_string(file).expect("File Read")
 }
