@@ -1,0 +1,38 @@
+; for i := 0 to n-1
+;    x[i] := x[i] * x[i]
+
+; i := 0
+; while i < n do
+;    x[i] := x[i] * x[i]
+;    i : = i + 1
+
+;       i := 0
+;loop   if not(i < n) goto end
+;       x[i] := x[i] * x[i]
+;       i := i + 1
+;       goto loop
+;end
+
+; R1 := i
+; R2 := n
+; R3 := x[i]
+; R4 := 1
+
+
+         add      R1,R0,R0          ;R1 := 0 = i
+         load     R2,n[R0]          ;R2 := n
+         lea      R4,1[R0]          ;R4 := 1
+loop     cmp      R1,R2             ;compare i and n
+         jumpge   end[R0]           ;if i >= n goto end
+         load     R3,x[R1]          ;R3 := x[i]
+         mul      R3,R3,R3          ;R3 := x[i] * x[i]
+         store    R3,x[R1]          ;x[i] := x[i] * x[i]
+         add      R1,R1,R4          ;i := i + 1
+         jump     loop[R0]           ;goto loop
+end      trap     R0,R0,R0          ;terminate
+x    data   7
+     data   5
+     data   2
+     data   4
+     data   3
+n    data   5
