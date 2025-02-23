@@ -5,6 +5,8 @@ use log::{log, Level};
 
 use super::code_editor;
 
+const EXERCISES: [(&str, &str); 2] = [("Pointer Arithmateic", "; test"), ("Blah Bl;ah", "; test2")];
+
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct VisualisingSigma16 {
@@ -155,9 +157,23 @@ impl eframe::App for VisualisingSigma16 {
                         .show_ui(ui, |ui| {
                             for editor in &mut self.code_editor {
                                 if !editor.opened {
-                                    if ui.selectable_label(true, editor.name.clone()).clicked() {
+                                    if ui.selectable_label(false, editor.name.clone()).clicked() {
                                         editor.opened = true;
                                     }
+                                }
+                            }
+                        });
+
+                    egui::ComboBox::from_label(" ")
+                        .selected_text("Load Exercise")
+                        .show_ui(ui, |ui| {
+                            for (exercise, code) in EXERCISES {
+                                if ui.selectable_label(false, exercise).clicked() {
+                                    let mut editor = CodeEditor::default();
+                                    editor.code = code.to_string();
+                                    editor.opened = true;
+                                    editor.name = exercise.to_string();
+                                    self.code_editor.push(editor);
                                 }
                             }
                         });
