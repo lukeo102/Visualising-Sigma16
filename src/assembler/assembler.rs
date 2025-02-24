@@ -51,7 +51,7 @@ impl Assembler {
         let lexer = Tokens::lexer(&code);
 
         for token in lexer {
-            //log!(Level::Info, "{token:?}");
+            log!(Level::Info, "{token:?}");
             match token {
                 Ok(token) => {
                     let valid_token = self.validate_token(token.clone());
@@ -255,7 +255,7 @@ impl Assembler {
 
     fn parse_irxargs(&mut self, args: &str) -> (u16, u16) {
         regex!(
-            regex = r"[Rr](?P<rd>[0-9]|1[0-5]),(?:(?P<var_match>[a-zA-Z][a-zA-Z0-9]+)|(?P<cons>[0-9]+)|(?P<hex>\$[a-fA-F0-9]{4}))\[[Rr](?P<disp>[0-9]|1[0-5])]"
+            regex = r"[Rr](?P<rd>[0-9]|1[0-5]),(?:(?P<var_match>[a-zA-Z][a-zA-Z0-9]*)|(?P<cons>[0-9]+)|(?P<hex>\$[a-fA-F0-9]{4}))\[[Rr](?P<disp>[0-9]|1[0-5])]"
         );
 
         let mut arg = 0_u16;

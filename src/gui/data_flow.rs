@@ -10,6 +10,7 @@ pub fn make(ui: &mut egui::Ui, runner: &mut CodeRunner) {
         make_registers(ui, runner);
         TableBuilder::new(ui)
             .columns(Column::auto(), 2)
+            .vscroll(false)
             .body(|mut body| {
                 body.row(100.0, |mut row| {
                     row.col(|ui| {
@@ -29,21 +30,19 @@ fn make_registers(ui: &mut egui::Ui, runner: &mut CodeRunner) {
         for reg in &runner.code.used_registers {
             ui.horizontal(|ui| {
                 ui.add(egui::Label::new(format!("R{:?}: ", reg)));
+                let value = format!("{:#06X}", runner.state.r[*reg].get_ui())
+                    .split_at(2)
+                    .1
+                    .to_string();
+
                 if runner.state.r[*reg].get_altered() {
-                    ui.label(
-                        egui::RichText::new(format!("{:?}", runner.state.r[*reg].get_ui()))
-                            .color(GREEN_TEXT),
-                    );
+                    ui.label(egui::RichText::new(value).color(GREEN_TEXT));
                 } else if runner.state.r[*reg].get_accessed() {
                     ui.label(
-                        egui::RichText::new(format!("{:?}", runner.state.r[*reg].get_ui()))
-                            .color(egui::Color32::from_rgb(255, 25, 25)),
+                        egui::RichText::new(value).color(egui::Color32::from_rgb(255, 25, 25)),
                     );
                 } else {
-                    ui.label(egui::RichText::new(format!(
-                        "{:?}",
-                        runner.state.r[*reg].get_ui()
-                    )));
+                    ui.label(egui::RichText::new(value));
                 }
             });
         }
@@ -57,7 +56,7 @@ fn make_memory(ui: &mut egui::Ui, runner: &mut CodeRunner) {
         ui.set_min_width(160.0);
         ui.heading("Memory");
         TableBuilder::new(ui)
-            .id_salt(uuid::Uuid::new_v4())
+            .id_salt(format!("memory-{:?}", runner.name))
             //.cell_layout(make_table_layout())
             .striped(true)
             .columns(Column::remainder(), 3)
@@ -100,22 +99,18 @@ fn make_memory(ui: &mut egui::Ui, runner: &mut CodeRunner) {
                             }
                         });
                         row.col(|ui| {
-                            ui.label(egui::RichText::new(format!("{:#06X} ", mem)));
+                            let value = format!("{:#06X}", mem).split_at(2).1.to_string();
+                            ui.label(egui::RichText::new(value));
                         });
                         row.col(|ui| {
+                            let value = format!("{:#06X}", runner.state.memory[mem])
+                                .split_at(2)
+                                .1
+                                .to_string();
                             if runner.state.memory.get_altered_i().contains(&mem) {
-                                ui.label(
-                                    egui::RichText::new(format!(
-                                        "{:#06X}",
-                                        runner.state.memory[mem]
-                                    ))
-                                    .color(GREEN_TEXT),
-                                );
+                                ui.label(egui::RichText::new(value).color(GREEN_TEXT));
                             } else {
-                                ui.label(egui::RichText::new(format!(
-                                    "{:#06X}",
-                                    runner.state.memory[mem]
-                                )));
+                                ui.label(egui::RichText::new(value));
                             }
                         });
                     });
@@ -156,7 +151,8 @@ fn make_symbol_table(ui: &mut egui::Ui, runner: &mut CodeRunner) {
                             ));
                         });
                         row.col(|ui| {
-                            ui.label(format!("{:#06X}", location));
+                            let value = format!("{:#06X}", location).split_at(2).1.to_string();
+                            ui.label(value);
                         });
                     });
                 }

@@ -1,11 +1,10 @@
 use crate::gui::code_editor::CodeEditor;
 use crate::gui::code_runner::CodeRunner;
 use crate::gui::data_flow;
+use crate::gui::exercises::EXERCISES;
 use log::{log, Level};
 
 use super::code_editor;
-
-const EXERCISES: [(&str, &str); 2] = [("Pointer Arithmateic", "; test"), ("Blah Bl;ah", "; test2")];
 
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state

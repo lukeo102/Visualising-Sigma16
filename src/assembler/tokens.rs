@@ -9,18 +9,22 @@ pub enum Tokens {
     Newline,
     #[regex(" +", |_| Skip)]
     Ignore,
-    #[regex(r"(?:[a-zA-Z][a-zA-Z0-9_]*)", |lex| lex.slice().to_owned())]
+    #[regex(r"(?:[a-zA-Z][a-zA-Z0-9_]*)", |lex| lex.slice().to_owned(), priority=1)]
     Label(String),
-    #[regex(r" +data +(?:[a-zA-Z][a-zA-Z0-9_]*|[0-9]+|\$[a-fA-F0-9]{4})"gm, |lex| lex.slice().to_owned())]
+    #[regex(r" +data +(?:[a-zA-Z][a-zA-Z0-9_]*|[0-9]+|\$[a-fA-F0-9]{4})", |lex| lex.slice().to_owned())]
     Data(String),
     //#[regex(r"(?:[a-zA-Z][a-zA-Z0-9_]*)", |lex| lex.slice().to_owned())]
     //#[regex(r"(?:[a-zA-Z][a-zA-Z0-9_]*) +data +(?:[a-zA-Z][a-zA-Z0-9_]*|[0-9]+|\$[a-fA-F0-9]{4})"gm, |lex| lex.slice().to_owned())]
     //Data(String),
+
+    //Instruction args
     #[regex(r"[Rr][(?:[0-9])(?:1[0-5])],[Rr][(?:[0-9])(?:1[0-5])],[Rr][(?:[0-9])(?:1[0-5])]", |lex| lex.slice().to_owned())]
     RRRArg(String),
     #[regex(r"[Rr][(?:[0-9])(?:1[0-5])],[Rr][(?:[0-9])(?:1[0-5])]", |lex| lex.slice().to_owned())]
     RRArg(String),
-    #[regex(r"[Rr](?:[0-9]|1[0-5]),(?:[a-zA-Z][a-zA-Z0-9_]+|[0-9]+|\$[a-fA-F0-9]{4})\[[Rr](?:[0-9]|1[0-5])]", |lex| lex.slice().to_owned())]
+    #[regex(r"[Rr][(?:[0-9])(?:1[0-5])],(?:[a-zA-Z][a-zA-Z0-9_]*)\[[Rr](?:[0-9]|1[0-5])\]", |lex| lex.slice().to_owned(), priority=1000)]
+    #[regex(r"[Rr][(?:[0-9])(?:1[0-5])],(?:[0-9]*)\[[Rr](?:[0-9]|1[0-5])\]", |lex| lex.slice().to_owned(), priority=1000)]
+    #[regex(r"[Rr][(?:[0-9])(?:1[0-5])],(?:\$[a-fA-F0-9]{4})\[[Rr](?:[0-9]|1[0-5])\]", |lex| lex.slice().to_owned(), priority=1000)]
     IRXArg(String),
 
     // RRR Instructions
@@ -53,6 +57,6 @@ pub enum Tokens {
     IRX(u16),
 
     // Jumps
-    #[regex(r" +jump[a-zA-Z]?[a-zA-Z]? +(?:(?:[a-zA-Z][a-zA-z0-9_]*)|(?:\$[A-Fa-f0-9]{4}))(?:\[[Rr][(?:[0-9])(?:1[0-5])]])?", |lex| lex.slice().to_owned())]
+    #[regex(r" +jump[a-zA-Z]{0,2} +(?:(?:[a-zA-Z][a-zA-z0-9_]*)|(?:\$[A-Fa-f0-9]{4}))(?:\[[Rr][(?:[0-9])(?:1[0-5])]])?", |lex| lex.slice().to_owned())]
     Jump(String),
 }

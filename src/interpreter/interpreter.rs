@@ -301,7 +301,8 @@ fn execute(opcode: OpCodes, state: &mut State) {
         // ================
         OpCodes::Lea(..) => {
             if let OpCodes::Lea(dst, disp, v) = opcode {
-                state.r[dst as usize].set((u32::from(v) + u32::from(disp)) as u16);
+                let result = (u32::from(v) + state.r[disp as usize].get() as u32) as u16;
+                state.r[dst as usize].set(result);
                 if state.verbose {
                     log!(
                         Level::Info,
@@ -314,7 +315,7 @@ fn execute(opcode: OpCodes, state: &mut State) {
         }
         OpCodes::Load(..) => {
             if let OpCodes::Load(dst, disp, addr) = opcode {
-                let mut temp_addr = u32::from(disp) + u32::from(addr);
+                let mut temp_addr = (state.r[disp as usize].get() as u32) + u32::from(addr);
                 if temp_addr > 65534 {
                     temp_addr -= 65534;
                 }
@@ -354,10 +355,19 @@ fn execute(opcode: OpCodes, state: &mut State) {
                 }
             }
         }
+        OpCodes::Jump(..) => {
+            if let OpCodes::Jump(_, disp, dest) = opcode {
+                let mut addr = dest as u32 + state.r[disp as usize].get() as u32;
+                if addr > u16::MAX as u32 {
+                    addr -= u16::MAX as u32;
+                }
+                state.pc.set(addr as u16)
+            }
+        }
 
         _ => {
             if state.verbose {
-                println!("Unknown instruction. Haulting execution");
+                log!(Level::Error, "Unknown instruction. Haulting execution");
             }
             state.state = RunningState::Haulted;
         }

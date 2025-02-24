@@ -14,6 +14,7 @@ pub struct CodeRunner {
     pub running: bool,
     pub code: Code,
     pub data_flow: bool,
+    pub name: String,
 }
 
 impl Default for CodeRunner {
@@ -27,6 +28,7 @@ impl Default for CodeRunner {
             running: false,
             code: Code::new("".to_string()),
             data_flow: false,
+            name: uuid::Uuid::new_v4().to_string(),
         }
     }
 }
