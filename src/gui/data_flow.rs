@@ -61,7 +61,7 @@ fn make_memory(ui: &mut egui::Ui, runner: &mut CodeRunner) {
             .striped(true)
             .columns(Column::remainder(), 3)
             .resizable(false)
-            .scroll_to_row(runner.state.pc.get() as usize, Some(egui::Align::TOP))
+            //.scroll_to_row(runner.state.pc.get() as usize, Some(egui::Align::TOP))
             .header(15.0, |mut header| {
                 header.col(|ui| {
                     ui.label("Line");

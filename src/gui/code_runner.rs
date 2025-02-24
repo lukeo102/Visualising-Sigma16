@@ -83,7 +83,19 @@ impl CodeRunner {
             v_ui.horizontal(|h_ui| {
                 CodeEditor::make_line_counter(&self.code.get_code(), h_ui, None);
                 CodeEditor::make_editor(&mut self.code.get_code(), h_ui, false);
-            })
+            });
+            self.make_errors(v_ui);
+        });
+    }
+
+    fn make_errors(&mut self, ui: &mut egui::Ui) {
+        ui.vertical(|ui| {
+            for error in &self.code.errors {
+                ui.label(format!("Error on line {:?}", error.line));
+                ui.label(&error.message);
+                ui.label(&error.resolution);
+                ui.separator();
+            }
         });
     }
 
