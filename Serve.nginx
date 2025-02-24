@@ -1,0 +1,8 @@
+server {
+	listen 80;
+	server_name sig16.lukeweb.net www.sig16.lukeweb.net;
+	root /mnt/large/uni/project/Visualising-Sigma16/dist/;
+	location / {
+		index index.html;
+	}
+}
