@@ -168,7 +168,7 @@ impl eframe::App for VisualisingSigma16 {
                         .show_ui(ui, |ui| {
                             for (exercise, code) in EXERCISES {
                                 if ui.selectable_label(false, exercise).clicked() {
-                                    let mut editor = CodeEditor::default();
+                                    let mut editor = CodeEditor::new_windowed();
                                     editor.code = code.to_string();
                                     editor.opened = true;
                                     editor.name = exercise.to_string();

@@ -2,9 +2,8 @@
 
 pub const EXERCISES: [(&str, &str); 2] = [
     (
-        "Pointer Arithmateic 1",
-        "
-; for i := 0 to n-1
+        "Pointer Arithmetic Pt. 1",
+        "; for i := 0 to n-1
 ;    x[i] := x[i] * x[i]
 
 ; i := 0
@@ -29,7 +28,7 @@ pub const EXERCISES: [(&str, &str); 2] = [
          load     R2,n[R0]          ;R2 := n
          lea      R4,1[R0]          ;R4 := 1
 loop     cmp      R1,R2             ;compare i and n
-         jumpge   end[R0]           ;if i >= n goto end
+         jumpgt   end[R0]           ;if i >= n goto end
          load     R3,x[R1]          ;R3 := x[i]
          mul      R3,R3,R3          ;R3 := x[i] * x[i]
          store    R3,x[R1]          ;x[i] := x[i] * x[i]
@@ -41,13 +40,11 @@ x    data   7
      data   2
      data   4
      data   3
-n    data   5
-        ",
+n    data   5",
     ),
     (
-        "Pointer Arithmateic 2",
-        "
-; p := &x[0]
+        "Pointer Arithmetic 2",
+        "; p := &x[0]
 ; q := p + n
 ; while p < q do
 ;   *p := *p * *p
@@ -71,7 +68,7 @@ n    data   5
          load     R2,n[R0]          ;R2 := n
          add      R4,R1,R2          ;R4 := p + n = q
 start    cmp      R1,R4             ;compare p and q
-         jumpge   done[R0]          ;if i >= n goto done
+         jumpgt   done[R0]          ;if i >= n goto done
          load     R3,0[R1]          ;R3 := *p (x[i])
          mul      R3,R3,R3          ;R3 := *p * *p (x[i] * x[i])
          store    R3,0[R1]          ;*p := *p * *p (x[i] := x[i] * x[i])
@@ -83,7 +80,6 @@ x    data   7
      data   2
      data   4
      data   3
-n    data   5
-     ",
+n    data   5",
     ),
 ];
