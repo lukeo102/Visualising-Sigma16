@@ -6,4 +6,5 @@ mod exercises;
 pub(crate) mod gui;
 mod monitor;
 mod syntax_highlighting;
+mod syntax_highlighting_runner;
 mod util;

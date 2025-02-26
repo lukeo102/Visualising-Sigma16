@@ -1,10 +1,13 @@
 use crate::assembler::code::Code;
 use crate::gui::code_editor::CodeEditor;
+use crate::gui::syntax_highlighting_runner::{highlight, CodeTheme};
 use crate::interpreter::interpreter;
 use crate::interpreter::state::{RunningState, State};
+use egui::Galley;
 use log::{log, Level};
 use serde_diff::{Apply, Diff};
 use std::collections::VecDeque;
+use std::sync::Arc;
 
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -81,11 +84,32 @@ impl CodeRunner {
                 }
             });
             v_ui.horizontal(|h_ui| {
-                CodeEditor::make_line_counter(&self.code.get_code(), h_ui, None);
+                let line = self
+                    .code
+                    .memory_to_code
+                    .get(&(self.state.pc.get_ui() as usize))
+                    .unwrap_or(&0);
+
+                CodeEditor::make_line_counter(
+                    &self.code.get_code(),
+                    h_ui,
+                    Some((
+                        &mut |ui: &egui::Ui, string: &str, _wrap_width: f32| {
+                            CodeRunner::layouter(&ui, string, _wrap_width)
+                        },
+                        line,
+                    )),
+                );
                 CodeEditor::make_editor(&mut self.code.get_code(), h_ui, false);
             });
             self.make_errors(v_ui);
         });
+    }
+
+    pub fn layouter(ui: &egui::Ui, string: &str, _wrap_width: f32) -> Arc<Galley> {
+        let layout_job = highlight(ui.ctx(), &CodeTheme::default(), string);
+        // layout_job.wrap.max_width = wrap_width; // no wrapping
+        ui.fonts(|font| font.layout_job(layout_job))
     }
 
     fn make_errors(&mut self, ui: &mut egui::Ui) {

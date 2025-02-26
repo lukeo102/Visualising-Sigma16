@@ -79,7 +79,7 @@ impl CodeEditor {
                 }
             });
             ui.horizontal(|ui| {
-                CodeEditor::make_line_counter(&self.code, ui, line_number_layouter);
+                CodeEditor::make_line_counter(&self.code, ui, None);
                 CodeEditor::make_editor(&mut self.code, ui, editable);
             });
         });
@@ -113,13 +113,17 @@ impl CodeEditor {
     pub fn make_line_counter(
         code: &String,
         ui: &mut egui::Ui,
-        line_number_layouter: Option<
+        line_number_layouter: Option<(
             &mut dyn for<'a, 'b> FnMut(&'a egui::Ui, &'b str, f32) -> Arc<Galley>,
-        >,
+            &usize,
+        )>,
     ) -> Response {
         let line_count = code.as_str().lines().count();
         let mut line_numbers_builder: Vec<String> = Vec::with_capacity(line_count);
         let indent = line_count.to_string().len() + 1;
+        if let Some((_, line)) = line_number_layouter {
+            line_numbers_builder.push(format!("{line},"));
+        }
         for i in 1..line_count + 1 {
             line_numbers_builder.push(format!("{:>indent$}\n", i,));
         }
@@ -132,7 +136,7 @@ impl CodeEditor {
             .desired_rows(10)
             .desired_width(6.9 * indent as f32)
             .lock_focus(false);
-        if let Some(line_number_layouter) = line_number_layouter {
+        if let Some((line_number_layouter, _)) = line_number_layouter {
             lines = lines.layouter(line_number_layouter);
         };
         ui.add(lines)
