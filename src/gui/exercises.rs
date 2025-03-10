@@ -1,15 +1,56 @@
 // An array of exercises: [(name, code)]
 
-pub const EXERCISES: [(&str, &str); 5] = [
+pub const EXERCISES: [(&str, &str); 7] = [
+    (
+        "Lea, Load, Store Showcase",
+        "
+     lea   R1,1[R0]
+     lea   R2,variables[R0]
+     lea   R3,variables[R1]
+
+     load  R4,variables[R0]
+     load  R5,0[R2]
+     load  R6,variables[R1]
+
+     store R6,variables[R0]
+     store R4,variables[R1]
+
+     sub   R2,R2,R1
+     store R3,0[R2] 
+
+     trap  R0,R0,R0
+
+          data 0
+variables data 5
+          data 10
+
+",
+    ),
+    (
+        "Square value in memory",
+        "; A simple program to square a value stored
+; in memory, then store it in the next
+; memory location
+
+      lea R1,1[R0]       ; R1 := 1
+      load R2,value[R0]  ; R2 := value
+      mul R3,R2,R2       ; R3 := value * value
+      store R3,value[R1] ; value + 1 := R3
+      trap R0,R0,R0      ; hault
+
+value data 10
+
+",
+    ),
     (
         "Array Sum Errors",
         "; Setup i
-     lea    R1,0[R0]      ; R1 := i := 0
+     lee    R1,0[R0]      ; R1 := i := 0
      lea    R2,1[R0]      ; R2 := 1
 
 ; Setup len(x)
-     lea    R5,n[R0]      ; R5 := &n
-     lea    R6,x[R0]      ; R6 := &x
+     lea    R5,n[R0]      ; R5 := &x
+     lea    R6,x[R0]      ; R6 := &n
      sub    R3,R6,R5      ; R3 := len(x) := &n - &x
 
 ; Add the array
@@ -93,17 +134,17 @@ result data    0",
 ; R4 := 1
 
 
-         add      R1,R0,R0          ;R1 := 0 = i
-         load     R2,n[R0]          ;R2 := n
-         lea      R4,1[R0]          ;R4 := 1
-loop     cmp      R1,R2             ;compare i and n
-         jumpgt   end[R0]           ;if i >= n goto end
-         load     R3,x[R1]          ;R3 := x[i]
-         mul      R3,R3,R3          ;R3 := x[i] * x[i]
-         store    R3,x[R1]          ;x[i] := x[i] * x[i]
-         add      R1,R1,R4          ;i := i + 1
-         jump     loop[R0]           ;goto loop
-end      trap     R0,R0,R0          ;terminate
+         add      R1,R0,R0          ; R1 := 0 = i
+         load     R2,n[R0]          ; R2 := n
+         lea      R4,1[R0]          ; R4 := 1
+loop     cmp      R1,R2             ; compare i and n
+         jumpge   end[R0]           ; if i >= n goto end
+         load     R3,x[R1]          ; R3 := x[i]
+         mul      R3,R3,R3          ; R3 := x[i] * x[i]
+         store    R3,x[R1]          ; x[i] := x[i] * x[i]
+         add      R1,R1,R4          ; i := i + 1
+         jump     loop[R0]          ; goto loop
+end      trap     R0,R0,R0          ; terminate
 x    data   7
      data   5
      data   2
@@ -135,17 +176,17 @@ n    data   5",
 ; R4 := q
 
 
-         lea      R1,x[R0]          ;R1 := &x[0] = p
-         load     R2,n[R0]          ;R2 := n
-         add      R4,R1,R2          ;R4 := p + n = q
-start    cmp      R1,R4             ;compare p and q
-         jumpgt   done[R0]          ;if i >= n goto done
-         load     R3,0[R1]          ;R3 := *p (x[i])
-         mul      R3,R3,R3          ;R3 := *p * *p (x[i] * x[i])
-         store    R3,0[R1]          ;*p := *p * *p (x[i] := x[i] * x[i])
-         lea      R1,1[R1]          ;p : = p + 1
-         jump     start[R0]         ;goto start
-done     trap     R0,R0,R0          ;terminate
+         lea      R1,x[R0]          ; R1 := &x[0] = p
+         load     R2,n[R0]          ; R2 := n
+         add      R4,R1,R2          ; R4 := p + n = q
+start    cmp      R1,R4             ; compare p and q
+         jumpge   done[R0]          ; if i >= n goto done
+         load     R3,0[R1]          ; R3 := *p (x[i])
+         mul      R3,R3,R3          ; R3 := *p * *p (x[i] * x[i])
+         store    R3,0[R1]          ; *p := *p * *p (x[i] := x[i] * x[i])
+         lea      R1,1[R1]          ; p : = p + 1
+         jump     start[R0]         ; goto start
+done     trap     R0,R0,R0          ; terminate
 x    data   7
      data   5
      data   2
@@ -186,20 +227,18 @@ function cmp      R1,R4             ; compare p and q
          load     R3,0[R1]          ; R3 := *p (array[i])
          mul      R3,R3,R3          ; R3 := *p * *p (array[i] * array[i])
          store    R3,0[R1]          ; *p := *p * *p (array[i] := array[i] * array[i])
-         lea      R1,1[R1]          ; p : = p + 1
+         lea      R1,1[R1]          ; p  := p + 1
          jump     function[R0]      ; goto start
 
 ; Square contents of array x
 first    lea      R1,x[R0]          ; R1 := &x[0] = p
-         load     R2,nx[R0]         ; R2 := nx
-         add      R4,R1,R2          ; R4 := p + nx = q
+         lea      R4,nx[R0]         ; R2 := &nx = q
          lea      R9,second[R0]     ; R9 := return address := &second
          jump     function[R0]      ; goto function
 
 ; Square contents of array y
 second   lea      R1,y[R0]          ; R1 := &y[0] = p
-         load     R2,ny[R0]         ; R2 := ny
-         add      R4,R1,R2          ; R4 := p + ny = q
+         lea      R4,ny[R0]         ; R2 := &ny = q
          lea      R9,done[R0]       ; R9 := return address := &done
          jump     function[R0]      ; goto function
 
@@ -219,6 +258,9 @@ y    data   8
      data   2
      data   4
      data   21
-ny   data   7",
+     data   13
+     data   17
+ny   data   7
+",
     ),
 ];
