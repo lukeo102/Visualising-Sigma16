@@ -107,7 +107,7 @@ impl CodeRunner {
     }
 
     pub fn layouter(ui: &egui::Ui, string: &str, _wrap_width: f32) -> Arc<Galley> {
-        let layout_job = highlight(ui.ctx(), &CodeTheme::default(), string);
+        let layout_job = highlight(ui.ctx(), &mut CodeTheme::default(), string);
         // layout_job.wrap.max_width = wrap_width; // no wrapping
         ui.fonts(|font| font.layout_job(layout_job))
     }

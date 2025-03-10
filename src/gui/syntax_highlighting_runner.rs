@@ -1,8 +1,10 @@
-use egui::text::LayoutJob;
+use egui::{text::LayoutJob, Color32};
 use log::{log, Level};
 use regex::Regex;
 
-pub fn highlight(ctx: &egui::Context, theme: &CodeTheme, code: &str) -> LayoutJob {
+pub fn highlight(ctx: &egui::Context, theme: &mut CodeTheme, code: &str) -> LayoutJob {
+    theme.setDefaultColor(ctx.style().visuals.text_color());
+
     impl egui::util::cache::ComputerMut<(&CodeTheme, &str), LayoutJob> for Highlighter {
         fn compute(&mut self, (theme, code): (&CodeTheme, &str)) -> LayoutJob {
             self.highlight(theme, code)
@@ -48,17 +50,21 @@ impl Default for CodeTheme {
     }
 }
 
+impl CodeTheme {
+    pub fn setDefaultColor(&mut self, color: Color32) {
+        use egui::TextFormat;
+        self.formats[TokenType::Default] = TextFormat::simple(egui::FontId::monospace(12.0), color);
+    }
+}
+
 #[derive(Default)]
 struct Highlighter {}
 
 impl Highlighter {
     fn highlight(&self, theme: &CodeTheme, code: &str) -> LayoutJob {
-        // Extremely simple syntax highlighter for when we compile without syntect
-
         let mut text = code;
 
-        let temp = code.find(",").unwrap_or(0);
-        log!(Level::Info, "FOUND: {:?}", &text[..temp]);
+        let temp = code.find(", ").unwrap_or(0);
         let target_line = usize::from_str_radix(&text[..temp], 10).unwrap_or(1) - 1;
         text = &text[temp + 1..];
 
