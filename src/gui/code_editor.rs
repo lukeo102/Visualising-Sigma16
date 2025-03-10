@@ -78,9 +78,11 @@ impl CodeEditor {
                     self.deleting = true;
                 }
             });
-            ui.horizontal(|ui| {
-                CodeEditor::make_line_counter(&self.code, ui, None);
-                CodeEditor::make_editor(&mut self.code, ui, editable);
+            egui::ScrollArea::new([true, true]).show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    CodeEditor::make_line_counter(&self.code, ui, None);
+                    CodeEditor::make_editor(&mut self.code, ui, editable);
+                });
             });
         });
     }
