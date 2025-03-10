@@ -145,7 +145,7 @@ fn execute(opcode: OpCodes, state: &mut State) {
                     );
                 }
 
-                state.r[rb as usize].set(result as u16);
+                state.r[rd as usize].set(result as u16);
 
                 // Set R15 bits
                 let mut r15 = 0_u16;
