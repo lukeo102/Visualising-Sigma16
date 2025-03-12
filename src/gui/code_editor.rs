@@ -34,6 +34,7 @@ impl CodeEditor {
     pub fn new_windowed() -> Self {
         let mut new_editor = CodeEditor::default();
         new_editor.windowed = true;
+        new_editor.runner = Some(CodeRunner::default());
         new_editor
     }
 

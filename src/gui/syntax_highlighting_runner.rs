@@ -64,8 +64,9 @@ impl Highlighter {
     fn highlight(&self, theme: &CodeTheme, code: &str) -> LayoutJob {
         let mut text = code;
 
-        let temp = code.find(", ").unwrap_or(0);
-        let target_line = usize::from_str_radix(&text[..temp], 10).unwrap_or(1) - 1;
+        let temp = code.find(",").unwrap_or(0);
+        let target_line = usize::from_str_radix(&text[..temp], 10).unwrap_or(1);
+
         text = &text[temp + 1..];
 
         let mut job = LayoutJob::default();
