@@ -83,27 +83,29 @@ impl CodeRunner {
                     self.reset(code);
                 }
             });
-            egui::ScrollArea::new([true, true]).show(v_ui, |ui| {
-                ui.horizontal(|h_ui| {
-                    let line = self
-                        .code
-                        .memory_to_code
-                        .get(&(self.state.pc.get_ui() as usize))
-                        .unwrap_or(&0);
+            egui::ScrollArea::new([true, true])
+                .max_height(v_ui.available_height() - 30.0)
+                .show(v_ui, |ui| {
+                    ui.horizontal(|h_ui| {
+                        let line = self
+                            .code
+                            .memory_to_code
+                            .get(&(self.state.pc.get_ui() as usize))
+                            .unwrap_or(&0);
 
-                    CodeEditor::make_line_counter(
-                        &self.code.get_code(),
-                        h_ui,
-                        Some((
-                            &mut |ui: &egui::Ui, string: &str, _wrap_width: f32| {
-                                CodeRunner::layouter(&ui, string, _wrap_width)
-                            },
-                            line,
-                        )),
-                    );
-                    CodeEditor::make_editor(&mut self.code.get_code(), h_ui, false);
+                        CodeEditor::make_line_counter(
+                            &self.code.get_code(),
+                            h_ui,
+                            Some((
+                                &mut |ui: &egui::Ui, string: &str, _wrap_width: f32| {
+                                    CodeRunner::layouter(&ui, string, _wrap_width)
+                                },
+                                line,
+                            )),
+                        );
+                        CodeEditor::make_editor(&mut self.code.get_code(), h_ui, false);
+                    });
                 });
-            });
             self.make_errors(v_ui);
         });
     }
