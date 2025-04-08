@@ -70,7 +70,7 @@ impl Highlighter {
         text = &text[temp + 1..];
 
         let mut job = LayoutJob::default();
-        let mut line = 0;
+        let mut line = 1;
 
         while !text.is_empty() {
             if line == target_line {

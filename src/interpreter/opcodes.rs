@@ -27,12 +27,11 @@ pub enum OpCodes {
     Load(u8, u8, u16),
     Store(u8, u8, u16),
     Jump(u8, u8, u16),
-    Jumpc(fn(u16) -> bool, u8, u16), // jumpc0 and jumpc1
+    Jumpc(fn(u16) -> bool, u8, u16), // Different jump conditions
     Jal(u8, u8, u16),
     Jumpz(u8, u8, u16),
     Jumpnz(u8, u8, u16),
     Testset(u8, u8, u16),
-    // iEXP instructions
 }
 
 // Pass in slice of current + max possible following.
@@ -50,6 +49,9 @@ pub fn next_op(
     // Extract individual nibbles from the word
     let nibbles = word_to_nibbles(word);
 
+    // While there are panics in here, they are unreachable
+    // The assembler ensures any instructions that are inserted, are done so correctly
+    // The only case a panic might occur is due to logic errors in the interpreter
     let opcode = match nibbles[3] {
         // iRRR instructions
         0 => Ok(OpCodes::Add(nibbles[2], nibbles[1], nibbles[0])),

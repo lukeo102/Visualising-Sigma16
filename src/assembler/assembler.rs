@@ -14,6 +14,7 @@ macro_rules! regex {
     };
 }
 
+/// A container to hold Sigma16 code and byte code
 pub struct Assembler {
     pub code: String,
     pub assembled: Vec<u16>,
@@ -30,6 +31,7 @@ pub struct Assembler {
 }
 
 impl Assembler {
+    /// Constructor -- takes the raw Sigma16 code as a parameter
     pub fn new(code: String) -> Assembler {
         Assembler {
             code,
@@ -46,10 +48,15 @@ impl Assembler {
             trap_index: None,
         }
     }
+
+    /// Assemble the raw Sigma16 code provided to the constructor into byte code
+    /// If there is an error, a malformed byte code will be produced in Assembler.assembled
+    /// Check for errors by ensuring Assembler.errors is of zero length
     pub fn assemble(&mut self) {
         let code = self.code.clone();
         let lexer = Tokens::lexer(&code);
 
+        // Iterate over each token and process it
         for token in lexer {
             log!(Level::Info, "{token:?}");
             match token {
@@ -109,6 +116,10 @@ impl Assembler {
         self.registers_used.sort_unstable();
     }
 
+    /// Verifies that tokens are in the correct order
+    /// Records errors where tokens are ordered incorrectly
+    /// For example: "add R3,variable[R0]"
+    ///     We dont want to compile IRX arguments for a RRR instruction
     fn validate_token(&mut self, token: Tokens) -> Result<Tokens, AssemblingError> {
         match token {
             Tokens::Ignore | Tokens::Newline => Ok(token),
@@ -160,14 +171,19 @@ impl Assembler {
         }
     }
 
+    /// Parses tokens into byte code
+    /// Tokens are only passed to here if the token did not create an error
     fn parse_token(&mut self, token: Tokens) {
         match token {
-            // Start of tokens that affect assembled code
+            // Base instructions, all instructions are created the same way
             Tokens::RRR(instruction) | Tokens::RR(instruction) | Tokens::IRX(instruction) => {
                 self.assembled.push(instruction);
                 self.mem_to_code.insert(self.cursor, self.line);
                 self.cursor += 1;
             }
+
+            // RRR arguments
+            // Gets the arguments and bit wise ors them with the instruction
             Tokens::RRRArg(args) => {
                 let reg: u16 = self.parse_rnargs(args, 3);
                 self.assembled[self.cursor - 1] |= reg;
@@ -175,10 +191,17 @@ impl Assembler {
                     self.trap_index = Some(self.cursor - 1);
                 }
             }
+
+            // RR arguments
+            // Gets the arguments and bit wise ors them with the instruction
             Tokens::RRArg(args) => {
                 let reg: u16 = self.parse_rnargs(args, 2);
                 self.assembled[self.cursor - 1] |= reg;
             }
+
+            // IRX arguments
+            // Gets the arguments and bit wise ors them with the instruction
+            // Pushes the address to the next memory address
             Tokens::IRXArg(args) => {
                 let (register, address) = self.parse_irxargs(&args);
 
@@ -187,12 +210,19 @@ impl Assembler {
                 self.mem_to_code.insert(self.cursor, self.line);
                 self.cursor += 1;
             }
+
+            // Labels -- anything that goes in the symbol table
+            // Not actual instructions or arguments, records the memory location it was
+            // created at for later processing
             Tokens::Label(arg) => {
                 let label = arg.replace(" ", "");
 
                 self.data_locations
                     .insert(label, (self.cursor as u16, self.line));
             }
+
+            // Data -- anything that is artificially inserted into memory
+            // Can be a decimal constant, hexadecimal constant, or a label
             Tokens::Data(args) => {
                 regex!(
                     regex = r" +data +(?:(P?<var>[a-zA-Z][a-zA-Z0-9_]*)|(?P<const>[0-9]+)|(?P<hex>\$[a-fA-F0-9]{4}))"
@@ -221,6 +251,9 @@ impl Assembler {
                 self.mem_to_code.insert(self.cursor, self.line);
                 self.cursor += 1;
             }
+
+            // Jump instructions
+            // Handles all jump instructions
             Tokens::Jump(command) => {
                 let (instruction, address) = self.parse_jump(command);
                 self.assembled.push(instruction);
@@ -230,6 +263,8 @@ impl Assembler {
                 self.mem_to_code.insert(self.cursor, self.line);
                 self.cursor += 1;
             }
+
+            // Tokens that do not insert into memory
             Tokens::Ignore => {}
             Tokens::Newline => {
                 self.line += 1;
@@ -237,11 +272,12 @@ impl Assembler {
         }
     }
 
+    /// Processes RRR and RR instruction arguments
     fn parse_rnargs(&mut self, args: String, n: usize) -> u16 {
         let mut arg = 0_u16;
         let mut temp = 0_u16;
 
-        // Reverse Rd,Ra,Rb then loop over them
+        // Reverse Rd,Ra,Rb or Ra,..[Rb] or Ra,Rb then loop over them
         for (i, reg) in args.rsplit(',').enumerate().take(n) {
             temp = reg[1..].parse::<u16>().unwrap();
             arg |= temp << (4 * i as u16);
@@ -253,6 +289,9 @@ impl Assembler {
         arg
     }
 
+    /// Processes IRX instruction arguments
+    /// Extracts the arguments then the address
+    /// Returns (arguments, address) both as u16
     fn parse_irxargs(&mut self, args: &str) -> (u16, u16) {
         regex!(
             regex = r"[Rr](?P<rd>[0-9]|1[0-5]),(?:(?P<var_match>[a-zA-Z][a-zA-Z0-9]*)|(?P<cons>[0-9]+)|(?P<hex>\$[a-fA-F0-9]{4}))\[[Rr](?P<disp>[0-9]|1[0-5])]"
@@ -303,12 +342,15 @@ impl Assembler {
             // If hex in addr
             addr = u16::from_str_radix(&hex.as_str()[1..], 16).unwrap();
         } else {
+            // This is unreachable as the token would not have been created if it was reachable
+            // This is here to satisfy the Rust compiler
             println!("Unknown argument");
         }
 
         (arg, addr)
     }
 
+    /// Processes jump instructions
     fn parse_jump(&mut self, command: String) -> (u16, u16) {
         regex!(
             regex = r"(?P<type>jump(?:[a-zA-Z]{2})?) +(?:(?P<label>[A-z][A-Za-z0-9]*)|(?P<const>\$[A-Fa-f0-9]{4}))(?:\[R(?P<register>[0-9]|1[0-5])])?"
@@ -336,6 +378,7 @@ impl Assembler {
             _ => 0_u16,
         };
 
+        // The register in jump arguments is optional, defaults to R0
         if let Some(register) = extracted_command.name("register") {
             instruction |= register.as_str().parse::<u16>().unwrap() << 4;
         }

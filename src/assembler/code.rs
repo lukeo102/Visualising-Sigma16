@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use super::error::AssemblingError;
 
 #[derive(serde::Serialize, serde::Deserialize)]
+/// A wrapper for the code so the assembler does not need to be serializable
 pub(crate) struct Code {
     pub memory: Vec<u16>,
     pub code: String,
@@ -20,6 +21,7 @@ impl Code {
         let mut assembler = Assembler::new(code);
         assembler.assemble();
 
+        // Log errors to the web browser console
         if !assembler.errors.is_empty() {
             for error in assembler.errors.clone() {
                 log!(

@@ -11,6 +11,7 @@ pub fn highlight(ctx: &egui::Context, theme: &CodeTheme, code: &str, language: &
 
     type HighlightCache<'a> = egui::util::cache::FrameCache<LayoutJob, Highlighter>;
 
+    log!(Level::Debug, "FETCHING FROM CACHE");
     ctx.memory(|memory| {
         memory
             .clone()
@@ -163,6 +164,7 @@ fn is_keyword(word: &str) -> bool {
         | "load"
         | "store"
         | "jal"
+        | "jump"
         | "jumpnz"
         | "jumpz"
         | "jumplt"

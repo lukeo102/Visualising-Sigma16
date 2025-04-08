@@ -2,6 +2,7 @@ use logos::{Logos, Skip};
 
 #[derive(Logos, Debug, PartialEq, Clone)]
 #[logos(skip r"[\t\r\f]+")]
+/// Sigma16 tokens for Logos
 pub enum Tokens {
     // Non-Instructions
     #[token("\n")]

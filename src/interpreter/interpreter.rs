@@ -5,6 +5,7 @@ use crate::interpreter::{
 };
 use log::{log, Level};
 
+// R15 bit masks
 const TC_MASK: u16 = 0b1000_0000_0000_0000;
 pub(crate) const R15_g: u16 = 0b1;
 const R15_G: u16 = 0b10;
@@ -26,9 +27,9 @@ pub fn step(state: &mut State) {
 
 fn execute(opcode: OpCodes, state: &mut State) {
     match opcode {
-        // ================
-        // RRR Instructions
-        // ================
+        // =====================
+        // RRR & RR Instructions
+        // =====================
         OpCodes::Add(..) => {
             if let OpCodes::Add(rd, ra, rb) = opcode {
                 let result: u32 =

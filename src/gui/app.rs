@@ -2,9 +2,8 @@ use crate::gui::code_editor::CodeEditor;
 use crate::gui::code_runner::CodeRunner;
 use crate::gui::data_flow;
 use crate::gui::exercises::EXERCISES;
-use log::{log, Level};
 
-use super::code_editor;
+use log::{log, Level};
 
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -14,6 +13,7 @@ pub struct VisualisingSigma16 {
 }
 
 impl Default for VisualisingSigma16 {
+    // default() needs to be implemented for serde
     fn default() -> Self {
         Self {
             show_code_editor: true,
@@ -97,6 +97,7 @@ impl VisualisingSigma16 {
 impl eframe::App for VisualisingSigma16 {
     /// Called by the frame work to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        log!(Level::Info, "Saving storage");
         eframe::set_value(storage, eframe::APP_KEY, self);
     }
 

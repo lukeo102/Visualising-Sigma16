@@ -33,7 +33,6 @@ impl Display for RunningState {
 #[derive(serde::Serialize, serde::Deserialize, serde_diff::SerdeDiff, Clone)]
 pub struct State {
     pub pc: Register,
-    pub ir: Register,
     pub r: [Register; 16],
     pub memory: Memory,
     pub state: RunningState,
@@ -56,7 +55,6 @@ impl State {
 
         let mut state = State {
             pc: (Register::new()),
-            ir: (Register::new()),
             r: [Register::new(); 16],
             memory: (Memory::new(Option::from(code.memory.as_slice()))),
             state: run_state,
@@ -129,13 +127,6 @@ impl State {
                 "  PC: {} | {:#06x}\n",
                 self.pc.get(),
                 self.pc.get()
-            ));
-        }
-        if self.ir.get_altered() {
-            log.push_str(&format!(
-                "  IR: {} | {:#06x}\n",
-                self.ir.get(),
-                self.ir.get()
             ));
         }
         for i in 0..16 {
