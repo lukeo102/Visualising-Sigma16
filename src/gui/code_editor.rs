@@ -73,7 +73,7 @@ impl CodeEditor {
                     self.opened = false;
                 }
 
-                ui.checkbox(&mut self.windowed, "Windowed");
+                //ui.checkbox(&mut self.windowed, "Windowed");
 
                 if ui.add(egui::Button::new("Delete")).clicked() {
                     self.deleting = true;
