@@ -34,11 +34,11 @@ Put a brief description of your code here. This should at least describe the fil
 ### Requirements
 
 This program was developed using the following tool chain, to build the program these tool chains should be installed at their listed version:
- - [Rustup](https://www.rust-lang.org/tools/install) | Version 1.27.1
+ - [Rustup](https://www.rust-lang.org/tools/install) | Version 1.28.1
    - Rustup should install Rustc and Cargo by itself.
-   - Rustc | Version 1.82.0
-   - Cargo | Version 1.82.0
- - Trunk | Version 0.21.2
+   - Rustc | Version 1.86.0
+   - Cargo | Version 1.86.0
+ - Trunk | Version 0.21.7
    - Installed via cargo by running `cargo install trunk` in a terminal
 
 ### Build steps
